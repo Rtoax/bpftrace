@@ -112,6 +112,7 @@ void SemanticAnalyser::visit(StackMode &mode)
 
 void SemanticAnalyser::visit(Identifier &identifier)
 {
+  static SizedType *offsetof_type = NULL;
   if (bpftrace_.enums_.count(identifier.ident) != 0) {
     identifier.type = CreateUInt64();
   }
@@ -119,11 +120,31 @@ void SemanticAnalyser::visit(Identifier &identifier)
   {
     identifier.type = CreateRecord(identifier.ident,
                                    bpftrace_.structs.Lookup(identifier.ident));
+    // We need to record struct type, it will be used to get the type of 'a' in
+    // "offsetof(struct Foo, a.b)".
+    if (func_ == "offsetof" && !offsetof_type)
+      offsetof_type = &identifier.type;
   }
   else if (func_ == "sizeof" && getIntcasts().count(identifier.ident) != 0)
   {
     identifier.type = CreateInt(
         std::get<0>(getIntcasts().at(identifier.ident)));
+  }
+  else if (func_ == "offsetof")
+  {
+    // Get type of 'a' in "offsetof(struct Foo, a.b)".
+    if (offsetof_type &&
+        offsetof_type->HasField(identifier.ident)) {
+      identifier.type = offsetof_type->GetField(identifier.ident).type;
+      offsetof_type = &identifier.type;
+			std::cout << identifier.ident << ": " << identifier.type << ": " << offsetof_type->GetName() << std::endl;
+    }
+    else {
+      identifier.type = CreateNone();
+			std::cout << identifier.ident << ": None: " << offsetof_type->GetName() << std::endl;
+    }
+    if (is_final_pass())
+      offsetof_type = NULL;
   }
   else {
     identifier.type = CreateNone();
@@ -1175,6 +1196,20 @@ void SemanticAnalyser::visit(Call &call)
     // an expression or a type. As a result, the only thing we'll check here
     // is that we have a single argument.
     check_nargs(call, 1);
+
+    call.type = CreateUInt64();
+  }
+  else if (call.func == "offsetof")
+  {
+    check_nargs(call, 2);
+    if (!check_arg(call, Type::record, 0, false, false))
+    {
+      auto &arg = *call.vargs->at(0);
+
+      LOG(ERROR, call.loc, err_)
+          << "offsetof() only supports record argument ("
+          << arg.type.type << " provided)";
+    }
 
     call.type = CreateUInt64();
   }
