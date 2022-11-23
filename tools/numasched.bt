@@ -1,0 +1,38 @@
+#!/bin/env bpftrace
+
+
+BEGIN
+{
+}
+
+/*
+tracepoint:sched:sched_move_numa
+{
+	$old_nid = args->src_nid;
+	$new_nid = args->dst_nid;
+
+	if ($old_nid != $new_nid) {
+		printf("%20s: %-8d %-8d -> %-8d\n", comm, pid, $old_nid, $new_nid);
+	}
+}
+*/
+
+tracepoint:sched:sched_switch
+/ pid != 0 /
+{
+	$old_nid = @meta[pid];
+	$new_nid = numaid;
+
+	if ($old_nid != $new_nid) {
+		printf("%20s: %-8d %-8d -> %-8d\n", comm, pid, $old_nid, $new_nid);
+	}
+
+	@meta[pid] = $new_nid;
+}
+
+END
+{
+	clear(@meta);
+}
+
+
