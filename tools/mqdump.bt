@@ -1,0 +1,15 @@
+#!/bin/env bpftrace
+
+BEGIN
+{
+}
+
+tracepoint:syscalls:sys_enter_mq_timedsend
+{
+	$msg = args->u_msg_ptr;
+	$len = args->msg_len;
+
+	time("%H:%M:%S ");
+	printf("%r\n", buf($msg, $len));
+}
+
