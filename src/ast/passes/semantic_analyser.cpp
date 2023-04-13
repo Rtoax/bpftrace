@@ -519,7 +519,33 @@ void SemanticAnalyser::visit(Call &call)
       auto &expr = (*call.vargs)[i];
       func_arg_idx_ = i;
 
-      expr->accept(*this);
+      // Handling offsetof() 2nd argument
+      if (func_ == "offsetof" && func_arg_idx_ == 1)
+      {
+        auto fc = dynamic_cast<FieldAccess *>(call.vargs->at(1));
+        auto binop = dynamic_cast<Binop *>(call.vargs->at(1));
+        if (fc != nullptr)
+        {
+          LOG(ERROR, call.loc, err_)
+              << call.func << "() unsupport subfield format.";
+        }
+        else if (binop != nullptr)
+        {
+          LOG(ERROR, call.loc, err_)
+              << call.func << "() unsupport Binop format.";
+        }
+        else
+        {
+          auto &field_arg = *call.vargs->at(1);
+          String &field_str = static_cast<String &>(field_arg);
+          expr = new Identifier(field_str.str, call.loc);
+          expr->accept(*this);
+        }
+      }
+      else
+      {
+        expr->accept(*this);
+      }
     }
   }
 
@@ -1187,24 +1213,31 @@ void SemanticAnalyser::visit(Call &call)
   {
     if (check_nargs(call, 2))
     {
-      auto &element_arg = *call.vargs->at(1);
-      String &element = static_cast<String&>(element_arg);
-      auto &arg = *call.vargs->at(0);
-      // check_arg() cannot be applied to offsetof(), because Type::record is
-      // first arg of offsetof(). check_arg() return true anyway.
-      if (arg.type.type != Type::record) {
+      auto element = dynamic_cast<Identifier *>(call.vargs->at(1));
+      if (element == nullptr)
+      {
         LOG(ERROR, call.loc, err_)
-            << "The first argument of "
-            << call.func << "() only supports " << Type::record << " ("
-            << arg.type.type << " provided)";
+            << call.func << "() only support single word right now.";
       }
-      // Only case Type::record can call HasField().
-      else if (!call.vargs->at(0)->type.HasField(element.str))
-        LOG(ERROR, call.loc, err_)
-          << "struct \'" << arg.type.GetName() << "\' has no field \'"
-          << element.str << "\'";;
+      else
+      {
+        auto &arg = *call.vargs->at(0);
+        // check_arg() cannot be applied to offsetof(), because Type::record is
+        // first arg of offsetof(). check_arg() return true anyway.
+        if (arg.type.type != Type::record) {
+          LOG(ERROR, call.loc, err_)
+              << "The first argument of "
+              << call.func << "() only supports " << Type::record << " ("
+              << arg.type.type << " provided)";
+        }
+        // Only case Type::record can call HasField().
+        else if (!call.vargs->at(0)->type.HasField(element->ident))
+          LOG(ERROR, call.loc, err_)
+              << "struct \'" << arg.type.GetName() << "\' has no field \'"
+              << element->ident << "\'";;
 
-      call.type = CreateUInt64();
+        call.type = CreateUInt64();
+      }
     }
   }
   else if (call.func == "path")
@@ -2121,12 +2154,6 @@ void SemanticAnalyser::visit(FieldAccess &acc)
 {
   // A field access must have a field XOR index
   assert((acc.field.size() > 0) != (acc.index >= 0));
-
-  if (func_ == "offsetof")
-  {
-    LOG(ERROR, acc.loc, err_) << "offsetof() not support subfield yet";
-    return;
-  }
 
   acc.expr->accept(*this);
 
