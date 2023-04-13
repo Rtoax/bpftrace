@@ -17,6 +17,8 @@ and this project adheres to
   - [#2557](https://github.com/iovisor/bpftrace/pull/2557)
 - BTF support for tracepoints defined in modules
   - [#2479](https://github.com/iovisor/bpftrace/pull/2479)
+- Add new function, `offsetof`, get the offset of the element in the struct
+  - TODO
 #### Changed
 #### Deprecated
 #### Removed

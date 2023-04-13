@@ -1147,6 +1147,13 @@ void CodegenLLVM::visit(Call &call)
   {
     expr_ = b_.getInt64(call.vargs->at(0)->type.GetSize());
   }
+  else if (call.func == "offsetof")
+  {
+    auto &element_arg = *call.vargs->at(1);
+    String &element = static_cast<String&>(element_arg);
+    auto &field = call.vargs->at(0)->type.GetField(element.str);
+    expr_ = b_.getInt64(field.offset);
+  }
   else if (call.func == "strerror")
   {
     auto scoped_del = accept(call.vargs->front());
