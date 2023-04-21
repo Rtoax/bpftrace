@@ -12,6 +12,7 @@
 #include "btf.h"
 #include "probe_matcher.h"
 #include "tracefs.h"
+#include "debugfs.h"
 #include "utils.h"
 
 namespace bpftrace {

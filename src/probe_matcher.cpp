@@ -40,6 +40,7 @@ static int add_symbol(const char* symname,
 std::set<std::string> ProbeMatcher::get_matches_in_stream(
     const std::string& search_input,
     bool ignore_trailing_module,
+    bool ignore_kprobes_blacklist,
     std::istream& symbol_stream,
     const char delim)
 {
@@ -53,6 +54,12 @@ std::set<std::string> ProbeMatcher::get_matches_in_stream(
     if (ignore_trailing_module && symbol_has_module(line))
     {
       line = strip_symbol_module(line);
+    }
+
+    // only {kprobe,kretprobe} don't ignore kprobes blacklist
+    if (!ignore_kprobes_blacklist && !bpftrace_->is_traceable_func(line))
+    {
+      continue;
     }
 
     if (!wildcard_match(line, tokens, start_wildcard, end_wildcard))
@@ -106,6 +113,7 @@ std::set<std::string> ProbeMatcher::get_matches_for_probetype(
 {
   std::unique_ptr<std::istream> symbol_stream;
   bool ignore_trailing_module = false;
+  bool ignore_kprobes_blacklist = true;
 
   switch (probe_type)
   {
@@ -115,6 +123,7 @@ std::set<std::string> ProbeMatcher::get_matches_for_probetype(
       symbol_stream = get_symbols_from_file_safe(
           tracefs::available_filter_functions());
       ignore_trailing_module = true;
+      ignore_kprobes_blacklist = false;
       break;
     }
     case ProbeType::uprobe:
@@ -173,6 +182,7 @@ std::set<std::string> ProbeMatcher::get_matches_for_probetype(
   if (symbol_stream)
     return get_matches_in_stream(search_input,
                                  ignore_trailing_module,
+                                 ignore_kprobes_blacklist,
                                  *symbol_stream);
   else
     return {};
@@ -192,7 +202,7 @@ std::set<std::string> ProbeMatcher::get_matches_in_set(
     stream_in.append(str + "$");
 
   std::istringstream stream(stream_in);
-  return get_matches_in_stream(search_input, false, stream, '$');
+  return get_matches_in_stream(search_input, false, true, stream, '$');
 }
 
 std::unique_ptr<std::istream> ProbeMatcher::get_symbols_from_file(
@@ -545,7 +555,7 @@ std::set<std::string> ProbeMatcher::expand_probetype_kernel(
     const std::string& probe_type)
 {
   if (has_wildcard(probe_type))
-    return get_matches_in_stream(probe_type, false, *kernel_probe_list());
+    return get_matches_in_stream(probe_type, false, true, *kernel_probe_list());
   else
     return { probe_type };
 }
@@ -554,7 +564,7 @@ std::set<std::string> ProbeMatcher::expand_probetype_userspace(
     const std::string& probe_type)
 {
   if (has_wildcard(probe_type))
-    return get_matches_in_stream(probe_type, false, *userspace_probe_list());
+    return get_matches_in_stream(probe_type, false, true, *userspace_probe_list());
   else
     return { probe_type };
 }

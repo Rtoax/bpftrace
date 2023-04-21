@@ -84,6 +84,7 @@ public:
 private:
   std::set<std::string> get_matches_in_stream(const std::string &search_input,
                                               bool ignore_trailing_module,
+                                              bool ignore_kprobes_blacklist,
                                               std::istream &symbol_stream,
                                               const char delim = '\n');
   std::set<std::string> get_matches_for_probetype(
