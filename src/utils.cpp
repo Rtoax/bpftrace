@@ -20,10 +20,10 @@
 #include <unistd.h>
 
 #include "bpftrace.h"
+#include "debugfs.h"
 #include "log.h"
 #include "probe_matcher.h"
 #include "tracefs.h"
-#include "debugfs.h"
 #include "utils.h"
 #include <bcc/bcc_elf.h>
 #include <bcc/bcc_syms.h>
@@ -1314,6 +1314,9 @@ std::pair<std::string, std::string> split_symbol_module(
 // Format example:
 // 0xffffffff85201511-0xffffffff8520152f	first_nmi
 // 0xffffffffc17e9373-0xffffffffc17e94ff	vmx_vmexit [kvm_intel]
+// The outputs are:
+// { "0xffffffff85201511-0xffffffff8520152f", "first_nmi", "" }
+// { "0xffffffffc17e9373-0xffffffffc17e94ff", "vmx_vmexit", "kvm_intel" }
 std::tuple<std::string, std::string, std::string> split_addrrange_symbol_module(
     const std::string &symbol)
 {
