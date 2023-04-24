@@ -46,6 +46,10 @@ void Visitor::visit(Sizeof &szof)
     Visit(*szof.expr);
 }
 
+void Visitor::visit(Offsetof &ofof __attribute__((__unused__)))
+{
+}
+
 void Visitor::visit(Map &map)
 {
   if (map.vargs)
@@ -228,6 +232,7 @@ DEFINE_MUTATOR_LEAF(Identifier)
 DEFINE_MUTATOR_LEAF(Variable)
 DEFINE_MUTATOR_LEAF(Jump)
 DEFINE_MUTATOR_LEAF(AttachPoint)
+DEFINE_MUTATOR_LEAF(Offsetof)
 
 #undef DEFINE_MUTATOR_LEAF
 

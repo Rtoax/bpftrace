@@ -139,6 +139,11 @@ void FieldAnalyser::visit(Sizeof &szof)
   resolve_type(szof.argtype);
 }
 
+void FieldAnalyser::visit(Offsetof &ofof)
+{
+  resolve_type(ofof.record);
+}
+
 void FieldAnalyser::visit(AssignMapStatement &assignment)
 {
   Visit(*assignment.map);

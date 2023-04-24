@@ -1375,6 +1375,12 @@ void SemanticAnalyser::visit(Sizeof &szof)
   resolve_struct_type(szof.argtype, szof.loc);
 }
 
+void SemanticAnalyser::visit(Offsetof &ofof)
+{
+  ofof.type = CreateUInt64();
+  resolve_struct_type(ofof.record, ofof.loc);
+}
+
 void SemanticAnalyser::check_stack_call(Call &call, bool kernel)
 {
   call.type = CreateStack(kernel);
