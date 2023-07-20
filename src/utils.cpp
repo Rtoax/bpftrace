@@ -788,6 +788,16 @@ std::string exec_system(const char *cmd)
   return result;
 }
 
+std::string get_absolute_path(std::string const &path)
+{
+  int exist = ::access(path.c_str(), F_OK);
+  if (exist == -1)
+  {
+    return path;
+  }
+  return std_filesystem::canonical(path);
+}
+
 /*
 Original resolve_binary_path API defaulting to bpftrace's mount namespace
 */
