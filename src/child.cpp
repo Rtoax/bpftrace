@@ -103,18 +103,31 @@ static void validate_cmd(std::vector<std::string>& cmd)
     case 1:
       cmd[0] = paths.front().c_str();
       break;
-    case 2:
-      // /bin maybe is a symbolic link to /usr/bin (/bin -> /usr/bin)
-      if (abs_path(paths[0]) == abs_path(paths[1]))
+    default:
+      // /bin maybe is a symbolic link to /usr/bin (/bin -> /usr/bin), there
+      // may be worse cases like:
+      // $ realpath /usr/bin/ping /bin/ping /usr/sbin/ping /sbin/ping
+      // /usr/bin/ping
+      // /usr/bin/ping
+      // /usr/bin/ping
+      // /usr/bin/ping
+      std::unordered_set<std::string> uniq_abs_path;
+      for (unsigned int i = 0; i < paths.size(); i++)
+      {
+        uniq_abs_path.insert(abs_path(paths[i]).value());
+      }
+
+      if (uniq_abs_path.size() == 1)
       {
         cmd[0] = paths.front().c_str();
         return;
       }
-      // fall through
-    default:
-      throw std::runtime_error("path '" + cmd[0] +
+      else
+      {
+        throw std::runtime_error("path '" + cmd[0] +
                                "' must refer to a unique binary but matched " +
                                std::to_string(paths.size()) + " binaries");
+      }
       return;
   }
 
