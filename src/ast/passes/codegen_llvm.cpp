@@ -1542,13 +1542,21 @@ ScopedExpr CodegenLLVM::visit(Call &call)
   } else if (call.func == "uaddr") {
     auto name = call.vargs.at(0).as<String>()->value;
     struct symbol sym = {};
+    // Wrong address for PIE
     int err = bpftrace_.resolve_uname(name,
                                       &sym,
                                       current_attach_point_->target);
     if (err < 0 || sym.address == 0)
       call.addError() << "Could not resolve symbol: "
                       << current_attach_point_->target << ":" << name;
+
+#if 1
+    Value *addr = b_.getInt64(sym.address);
+    Value *pid = b_.CreateGetPid(call.loc, false);
+    return ScopedExpr(pid);
+#else
     return ScopedExpr(b_.getInt64(sym.address));
+#endif
   } else if (call.func == "cgroupid") {
     uint64_t cgroupid;
     auto path = call.vargs.at(0).as<String>()->value;

@@ -1,0 +1,15 @@
+#!/usr/bin/env bpftrace
+#ifndef BPFTRACE_HAVE_BTF
+#endif
+
+uprobe:/bin/bash:readline
+{
+	printf("pid %d, ps1_prompt: 0x%lx <%s>\n", pid, uaddr("ps1_prompt"), str(*uaddr("ps1_prompt")));
+	printf("pid %d, environ: 0x%lx\n", pid, uaddr("environ"));
+}
+
+uprobe:libc:printf
+{
+	$addr = uaddr("__wprintf_chk");
+	printf("%lx %ld\n", $addr, $addr);
+}
