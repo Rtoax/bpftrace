@@ -1170,6 +1170,12 @@ std::string BPFtrace::resolve_cgroup_path(uint64_t cgroup_path_id,
   return result.str().substr(0, result.str().size() - 1);
 }
 
+uint64_t BPFtrace::resolve_pie_bias(pid_t pid) const
+{
+  std::cout << __func__ << ": " << __LINE__ << "pid = " << pid << std::endl;
+  return 0xFFFF000000000000;
+}
+
 uint64_t BPFtrace::read_address_from_output(std::string output)
 {
   std::string first_word = output.substr(0, output.find(" "));

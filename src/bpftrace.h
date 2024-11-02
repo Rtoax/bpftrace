@@ -161,6 +161,7 @@ public:
   std::string resolve_mac_address(const char *mac_addr) const;
   std::string resolve_cgroup_path(uint64_t cgroup_path_id,
                                   uint64_t cgroup_id) const;
+  uint64_t resolve_pie_bias(pid_t pid) const;
   std::string resolve_probe(uint64_t probe_id) const;
   void add_param(const std::string &param);
   std::string get_param(size_t index) const;

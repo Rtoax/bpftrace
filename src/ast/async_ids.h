@@ -22,7 +22,8 @@ namespace bpftrace::ast {
   DO(time)                                                                     \
   DO(tuple)                                                                    \
   DO(variable)                                                                 \
-  DO(watchpoint)
+  DO(watchpoint)                                                               \
+  DO(pie_bias)
 
 #define DEFINE_MEMBER_VAR(id, ...) int _##id = 0;
 #define DEFINE_ACCESS_METHOD(id, ...)                                          \

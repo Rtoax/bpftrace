@@ -1,0 +1,6 @@
+#!/bin/env bpftrace
+
+i:s:1
+{
+	printf("%s\n", cgroup_path(1));
+}

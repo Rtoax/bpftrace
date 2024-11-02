@@ -71,6 +71,7 @@ std::string typestr(const SizedType &type, bool debug)
     case Type::sum_t:
     case Type::avg_t:
     case Type::stats_t:
+    case Type::pie_bias_t:
       return (type.is_signed_ ? "" : "u") + typestr(type.GetTy());
     case Type::count_t:
     case Type::mac_address:
@@ -227,6 +228,7 @@ std::string typestr(Type t)
     case Type::timestamp:return "timestamp";break;
     case Type::mac_address: return "mac_address"; break;
     case Type::cgroup_path_t: return "cgroup_path_t"; break;
+    case Type::pie_bias_t: return "pie_bias_t"; break;
     case Type::strerror_t: return "strerror_t"; break;
     case Type::timestamp_mode: return "timestamp_mode"; break;
     case Type::boolean:     return "bool";     break;
@@ -476,6 +478,11 @@ SizedType CreateMacAddress()
 SizedType CreateCgroupPath()
 {
   return { Type::cgroup_path_t, 16 };
+}
+
+SizedType CreatePIEBias()
+{
+  return { Type::pie_bias_t, 8 };
 }
 
 SizedType CreateStrerror()

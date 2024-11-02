@@ -93,6 +93,15 @@ std::vector<llvm::Type*> CgroupPath::asLLVMType(ast::IRBuilderBPF& b)
   };
 }
 
+std::vector<llvm::Type*> PIEBias::asLLVMType(ast::IRBuilderBPF& b)
+{
+  std::cout << __func__ << ": " << __LINE__ << std::endl;
+  return {
+    b.getInt64Ty(), // asyncid
+    b.getInt32Ty(), // pid
+  };
+}
+
 std::vector<llvm::Type*> SkbOutput::asLLVMType(ast::IRBuilderBPF& b)
 {
   return {

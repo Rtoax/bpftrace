@@ -104,6 +104,13 @@ struct CgroupPath {
   std::vector<llvm::Type*> asLLVMType(ast::IRBuilderBPF& b);
 } __attribute__((packed));
 
+struct PIEBias {
+  uint64_t action_id;
+  pid_t pid;
+
+  std::vector<llvm::Type*> asLLVMType(ast::IRBuilderBPF& b);
+} __attribute__((packed));
+
 struct SkbOutput {
   uint64_t action_id;
   uint64_t skb_output_id;

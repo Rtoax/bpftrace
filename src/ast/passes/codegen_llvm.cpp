@@ -1542,13 +1542,48 @@ ScopedExpr CodegenLLVM::visit(Call &call)
   } else if (call.func == "uaddr") {
     auto name = call.vargs.at(0).as<String>()->value;
     struct symbol sym = {};
+    // Wrong address for PIE
     int err = bpftrace_.resolve_uname(name,
                                       &sym,
                                       current_attach_point_->target);
     if (err < 0 || sym.address == 0)
       call.addError() << "Could not resolve symbol: "
                       << current_attach_point_->target << ":" << name;
+
+#if 1
+    auto elements = AsyncEvent::PIEBias().asLLVMType(b_);
+    StructType *bias_struct = b_.GetStructType(call.func + "_bias_t",
+                                               elements,
+                                               true);
+
+    AllocaInst *buf = b_.CreateAllocaBPF(bias_struct, call.func + "_bias_t");
+
+    b_.CreateStore(
+        b_.GetIntSameSize(async_ids_.pie_bias(),
+                          elements.at(0)),
+        b_.CreateGEP(bias_struct, buf, { b_.getInt64(0), b_.getInt32(0) }));
+
+    // Store pid
+    Value *pid = b_.CreateGetPid(call.loc, false);
+    b_.CreateStore(pid,
+                   b_.CreateGEP(bias_struct,
+                                buf,
+                                { b_.getInt64(0), b_.getInt32(1) }));
+
+    Value *addr = b_.getInt64(sym.address);
+    Value *bias = b_.CreateGEP(bias_struct,
+                               buf,
+                               { b_.getInt64(0), b_.getInt32(1) });
+    SizedType pie_bias = CreatePIEBias();
+    return ScopedExpr(buf, [this, buf]() { b_.CreateLifetimeEnd(buf); });
+    //return ScopedExpr(b_.CreateAdd(bias, addr));
+#else
+    Value *addr = b_.getInt64(sym.address);
+    Value *pid = b_.getInt64(0xF0000000);
+    //Value *pid = b_.CreateGetPid(call.loc, false);
+    return ScopedExpr(b_.CreateAdd(pid, addr));
     return ScopedExpr(b_.getInt64(sym.address));
+#endif
   } else if (call.func == "cgroupid") {
     uint64_t cgroupid;
     auto path = call.vargs.at(0).as<String>()->value;

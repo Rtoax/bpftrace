@@ -729,6 +729,7 @@ static bool IsValidVarDeclType(const SizedType &ty)
     case Type::record:
     case Type::tuple:
     case Type::cgroup_path_t:
+    case Type::pie_bias_t:
     case Type::strerror_t:
     case Type::none:
     case Type::timestamp_mode:
@@ -1548,6 +1549,7 @@ void SemanticAnalyser::visit(Call &call)
     auto name = call.vargs.at(0).as<String>()->value;
     for (auto *ap : probe->attach_points) {
       struct symbol sym = {};
+      // Wrong address for PIE
       int err = bpftrace_.resolve_uname(name, &sym, ap->target);
       if (err < 0 || sym.address == 0) {
         call.addError() << "Could not resolve symbol: " << ap->target << ":"

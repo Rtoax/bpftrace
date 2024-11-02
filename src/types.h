@@ -52,6 +52,7 @@ enum class Type : uint8_t {
   cgroup_path_t,
   strerror_t,
   timestamp_mode,
+  pie_bias_t,
   // clang-format on
 };
 
@@ -473,6 +474,10 @@ public:
   {
     return type_ == Type::cgroup_path_t;
   };
+  bool IsPIEBiasTy() const
+  {
+    return type_ == Type::pie_bias_t;
+  };
   bool IsStrerrorTy() const
   {
     return type_ == Type::strerror_t;
@@ -572,6 +577,7 @@ SizedType CreateBuffer(size_t size);
 SizedType CreateTimestamp();
 SizedType CreateMacAddress();
 SizedType CreateCgroupPath();
+SizedType CreatePIEBias();
 SizedType CreateStrerror();
 SizedType CreateTimestampMode();
 

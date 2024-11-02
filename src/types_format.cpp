@@ -238,6 +238,10 @@ Result<output::Primitive> format(BPFtrace &bpftrace,
       const auto &c = value.bitcast<const AsyncEvent::CgroupPath>();
       return bpftrace.resolve_cgroup_path(c.cgroup_path_id, c.cgroup_id);
     }
+    case Type::pie_bias_t: {
+      const auto &c = value.bitcast<const AsyncEvent::PIEBias>();
+      return bpftrace.resolve_pie_bias(c.pid);
+    }
     case Type::strerror_t: {
       return strerror(value.bitcast<uint64_t>());
     }
