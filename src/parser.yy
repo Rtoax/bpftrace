@@ -127,6 +127,7 @@ void yyerror(bpftrace::Driver &driver, const char *s);
 %token <std::string> BREAK "break"
 %token <std::string> SIZEOF "sizeof"
 %token <std::string> OFFSETOF "offsetof"
+%token <std::string> CONTAINER_OF "container_of"
 %token <std::string> LET "let"
 
 
@@ -139,6 +140,7 @@ void yyerror(bpftrace::Driver &driver, const char *s);
 %type <ast::Call *> call
 %type <ast::Sizeof *> sizeof_expr
 %type <ast::Offsetof *> offsetof_expr
+%type <ast::Container_of *> container_of_expr
 %type <ast::Expression *> and_expr addi_expr primary_expr cast_expr conditional_expr equality_expr expr logical_and_expr muli_expr
 %type <ast::Expression *> logical_or_expr map_or_var or_expr postfix_expr relational_expr shift_expr tuple_access_expr unary_expr xor_expr
 %type <ast::ExpressionList> vargs
@@ -513,6 +515,7 @@ postfix_expr:
         |       call                           { $$ = $1; }
         |       sizeof_expr                    { $$ = $1; }
         |       offsetof_expr                  { $$ = $1; }
+        |       container_of_expr              { $$ = $1; }
         |       map_or_var INCREMENT           { $$ = driver.ctx.make_node<ast::Unop>(ast::Operator::INCREMENT, $1, true, @2); }
         |       map_or_var DECREMENT           { $$ = driver.ctx.make_node<ast::Unop>(ast::Operator::DECREMENT, $1, true, @2); }
 /* errors */
@@ -631,6 +634,10 @@ offsetof_expr:
                 OFFSETOF "(" struct_type "," struct_field ")"      { $$ = driver.ctx.make_node<ast::Offsetof>($3, $5, @$); }
                 /* For example: offsetof(*curtask, comm) */
         |       OFFSETOF "(" expr "," struct_field ")"             { $$ = driver.ctx.make_node<ast::Offsetof>($3, $5, @$); }
+                ;
+
+container_of_expr:
+                CONTAINER_OF "(" expr "," struct_type "," external_name ")"   { $$ = driver.ctx.make_node<ast::Container_of>($3, $5, $7, @$); }
                 ;
 
 int:

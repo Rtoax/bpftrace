@@ -36,6 +36,7 @@ public:
   void visit(Cast &cast);
   void visit(Sizeof &szof);
   void visit(Offsetof &offof);
+  void visit(Container_of &cof);
   void visit(AssignMapStatement &assignment);
   void visit(AssignVarStatement &assignment);
   void visit(Unop &unop);

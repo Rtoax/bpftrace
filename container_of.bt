@@ -1,0 +1,30 @@
+#!src/bpftrace
+
+struct foo {
+	int a;
+	int b;
+	int c;
+}
+
+struct container {
+	int a;
+	struct foo foo;
+	int b;
+};
+
+BEGIN {
+	printf("offset of foo in container %ld\n", offsetof(struct container, foo));
+
+	$container = (struct container *)0x10000;
+	$foo = (struct foo *)(0x10000 + offsetof(struct container, foo));
+
+	$container1 = container_of($foo, struct container, foo);
+	printf("%lx %lx %lx\n", $foo, $container1, sizeof($container1->foo));
+
+	$container2 = container_of((struct foo *)curtask, struct container, foo);
+	//$container3 = container_of(curtask, struct container, foo);
+	$container4 = container_of((int32 *)curtask, struct container, b);
+
+
+	exit();
+}

@@ -74,6 +74,12 @@ Offsetof::Offsetof(Expression *expr,
 {
 }
 
+Container_of::Container_of(Expression *expr, SizedType record,
+                           std::string &field, location loc)
+    : Expression(loc), expr(expr), record(record), field(field)
+{
+}
+
 Map::Map(const std::string &ident, location loc) : Expression(loc), ident(ident)
 {
   is_map = true;

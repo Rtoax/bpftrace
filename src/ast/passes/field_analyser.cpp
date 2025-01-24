@@ -137,6 +137,13 @@ void FieldAnalyser::visit(Offsetof &offof)
   resolve_type(offof.record);
 }
 
+void FieldAnalyser::visit(Container_of &cof)
+{
+  if (cof.expr)
+    Visit(*cof.expr);
+  resolve_type(cof.record);
+}
+
 void FieldAnalyser::visit(AssignMapStatement &assignment)
 {
   visit(assignment.map);

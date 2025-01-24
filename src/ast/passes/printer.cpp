@@ -144,6 +144,22 @@ void Printer::visit(Offsetof &offof)
   --depth_;
 }
 
+void Printer::visit(Container_of &cof)
+{
+  std::string indent(depth_, ' ');
+  out_ << indent << "container_of: " << type(cof.type) << std::endl;
+
+  ++depth_;
+  std::string indentParam(depth_, ' ');
+
+  // Print the args
+  cof.expr->accept(*this);
+  out_ << indentParam << cof.record << std::endl;
+
+  out_ << indentParam << cof.field << std::endl;
+  --depth_;
+}
+
 void Printer::visit(Map &map)
 {
   std::string indent(depth_, ' ');

@@ -1640,6 +1640,43 @@ void SemanticAnalyser::visit(Offsetof &offof)
   }
 }
 
+void SemanticAnalyser::visit(Container_of &cof)
+{
+  cof.type = CreateUInt64();
+
+  Visit(cof.expr);
+
+  resolve_struct_type(cof.record, cof.loc);
+
+  if (!cof.expr->is_variable && !cof.expr->type.IsPtrTy())
+    LOG(ERROR, cof.loc, err_)
+        << "container_of() 1st argument is not of a variable/ptr type.";
+
+  if (!cof.record.IsRecordTy()) {
+    LOG(ERROR, cof.loc, err_)
+        << "container_of() 2st argument is not of a record type.";
+  } else if (!bpftrace_.structs.Has(cof.record.GetName())) {
+    LOG(ERROR, cof.loc, err_) << "'" << cof.record << "' does not exist.";
+  } else if (!cof.record.HasField(cof.field)) {
+    LOG(ERROR, cof.loc, err_) << "'" << cof.record << "' "
+                               << "has no field named "
+                               << "'" << cof.field << "'";
+  }
+
+  SizedType field_ptr = CreatePointer(cof.record.GetField(cof.field).type,
+                                 AddrSpace::bpf);
+
+  if (field_ptr != cof.expr->type)
+    LOG(ERROR, cof.loc, err_)
+        << "container_of() 1st argument is '" << cof.expr->type
+        << "' not '" << field_ptr << "' type.";
+
+  cof.type = CreatePointer(CreateRecord(cof.record.GetName(),
+                                        bpftrace_.structs.Lookup(
+					    cof.record.GetName())),
+                           AddrSpace::kernel);
+}
+
 void SemanticAnalyser::check_stack_call(Call &call, bool kernel)
 {
   call.type = CreateStack(kernel);

@@ -1513,6 +1513,48 @@ void CodegenLLVM::visit(Offsetof &offof)
   expr_ = b_.getInt64(offset);
 }
 
+void CodegenLLVM::visit(Container_of &cof)
+{
+  auto &field = cof.record.GetField(cof.field);
+#if 0
+  expr_ = cof.expr - b_.getInt64(field.offset);
+#elif 0
+      probereadDatastructElem(expr_,
+                              b_.getInt64(-field.offset),
+                              cof.expr->type,
+                              cof.type,
+                              nullptr,
+                              cof.loc,
+                              "???");
+#elif 0
+	std::cout << "cof.expr: " << cof.expr << std::endl;
+  Value *field_addr, *off;
+  field_addr = cof.expr;
+  field_addr = b_.CreateIntCast(field_addr, b_.getIntNTy(size * 8), lsign);
+  field_addr = dynamic_cast<bpftrace::ast::Value*>(cof.expr->get());
+  off = b_.getInt64(field.offset);
+
+  std::cout << "field_addr: " << field_addr << std::endl;
+  std::cout << "off: " << off << std::endl;
+
+  expr_ = b_.CreateSub(field_addr, off);
+#elif 0
+  SizedType &type = cof.expr->type;
+  auto *et = type.GetPointeeTy();
+  AllocaInst *dst = b_.CreateAllocaBPF(*et, "deref");
+  b_.CreateProbeRead(ctx_, dst, *et, expr_, cof.loc, type.GetAS());
+  expr_ = b_.CreateLoad(b_.GetType(*et), dst);
+  b_.CreateLifetimeEnd(dst);
+#elif 0
+// see AssignVarStatement
+  Variable &var = *cof.expr->var;
+  std::cout << "var.ident = " << var.ident << std::endl;
+  b_.CreateStore(expr_, getVariable(var.ident).value);
+#else
+  expr_ = b_.getInt64(- field.offset);
+#endif
+}
+
 void CodegenLLVM::visit(Map &map)
 {
   auto [key, scoped_key_deleter] = getMapKey(map);

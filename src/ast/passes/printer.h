@@ -26,6 +26,7 @@ public:
   void visit(Call &call);
   void visit(Sizeof &szof);
   void visit(Offsetof &offof);
+  void visit(Container_of &cof);
   void visit(Map &map);
   void visit(Variable &var);
   void visit(Binop &binop);

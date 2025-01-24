@@ -206,6 +206,21 @@ private:
   Offsetof(const Offsetof &other) = default;
 };
 
+class Container_of : public Expression {
+public:
+  DEFINE_ACCEPT
+
+  Container_of(Expression *expr, SizedType record, std::string &field,
+               location loc);
+
+  Expression *expr = nullptr;
+  SizedType record;
+  std::string field;
+
+private:
+  Container_of(const Container_of &other) = default;
+};
+
 class Map : public Expression {
 public:
   explicit Map(const std::string &ident, location loc);
