@@ -240,7 +240,7 @@ void ResourceAnalyser::visit(Call &call)
                                        : " ";
     resources_.join_args.push_back(delim);
   } else if (call.func == "count" || call.func == "sum" || call.func == "min" ||
-             call.func == "max" || call.func == "avg") {
+             call.func == "max" || call.func == "avg" || call.func == "nproc") {
     resources_.needed_global_vars.insert(
         bpftrace::globalvars::GlobalVar::NUM_CPUS);
   } else if (call.func == "hist") {

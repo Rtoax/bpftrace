@@ -1255,6 +1255,12 @@ ScopedExpr CodegenLLVM::visit(Call &call)
     return ScopedExpr(
         b_.CreateUSym(ctx_, scoped_arg.value(), get_probe_id(), call.loc),
         std::move(scoped_arg));
+  } else if (call.func == "nproc") {
+    return ScopedExpr(
+        b_.CreateLoad(b_.getInt64Ty(),
+                      module_->getGlobalVariable(
+                          to_string(bpftrace::globalvars::GlobalVar::NUM_CPUS)),
+                      "num_cpu.cmp"));
   } else if (call.func == "ntop") {
     // struct {
     //   int af_type;

@@ -408,6 +408,9 @@ static const std::map<std::string, call_spec> CALL_SPEC = {
       .max_args=1,
       .arg_types={
         arg_type_spec{ .type=Type::timestamp_mode } } } },
+  { "nproc",
+    { .min_args=0,
+      .max_args=0 } },
   { "ntop",
     { .min_args=1,
       .max_args=2 } },
@@ -1279,6 +1282,8 @@ void SemanticAnalyser::visit(Call &call)
       call.return_type = CreateKSym();
     else if (call.func == "usym")
       call.return_type = CreateUSym();
+  } else if (call.func == "nproc") {
+    call.return_type = CreateInteger(64, 0);
   } else if (call.func == "ntop") {
     int index = 0;
     if (call.vargs.size() == 2) {
