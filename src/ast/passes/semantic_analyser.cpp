@@ -2395,7 +2395,7 @@ void SemanticAnalyser::visit(Unroll &unroll)
   if (integer->value > static_cast<uint64_t>(100)) {
     unroll.addError() << "unroll maximum value is 100";
   } else if (integer->value < static_cast<uint64_t>(1)) {
-    unroll.addError() << "unroll minimum value is 1";
+    unroll.addError() << "unroll minimum value is 1, but is " << integer->value;
   }
 
   visit(unroll.block);

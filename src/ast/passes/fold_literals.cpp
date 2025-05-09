@@ -357,6 +357,7 @@ std::optional<Expression> LiteralFolder::visit(PositionalParameter &param)
     return ast_.make_node<Integer>(static_cast<uint64_t>(0),
                                    Location(param.loc));
   }
+  std::cout << "param: " << param.n << std::endl;
   try {
     if (val[0] == '-') {
       auto v = util::to_int(val, 0);
