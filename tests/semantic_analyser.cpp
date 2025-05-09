@@ -1343,6 +1343,18 @@ TEST(semantic_analyser, call_usym)
   test("kprobe:f { usym(\"hello\"); }", 1);
 }
 
+TEST(semantic_analyser, call_nproc)
+{
+  test("kprobe:f { @x = nproc(); }");
+
+  test_error("BEGIN { @x = nproc(1); exit(); }",
+             R"(
+stdin:1:14-22: ERROR: nproc() requires no arguments (1 provided)
+BEGIN { @x = nproc(1); exit(); }
+             ~~~~~~~~
+)");
+}
+
 TEST(semantic_analyser, call_ntop)
 {
   std::string structs = "struct inet { unsigned char ipv4[4]; unsigned char "

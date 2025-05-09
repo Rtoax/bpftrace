@@ -2146,6 +2146,10 @@ Tracing block I/O sizes > 0 bytes
 | Timestamps and Time Deltas
 | Sync
 
+| <<functions-nproc, `nproc`>>
+| Get the number of CPU processing units.
+| Sync
+
 | <<functions-ntop, `ntop`>>
 | Convert IP address data to text
 | Sync
@@ -2578,6 +2582,14 @@ interval:s:1 {
  * ...
  */
 ----
+
+[#functions-nproc]
+=== nproc
+
+.variants
+* `uint64 nproc()`
+
+`nproc` returns the number of CPUs.
 
 [#functions-ntop]
 === ntop

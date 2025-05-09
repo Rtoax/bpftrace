@@ -113,6 +113,18 @@ class Runner(object):
             raise ValueError("Invalid skip reason: %d" % status)
 
     @staticmethod
+    def get_nproc():
+        try:
+            result = subprocess.run(["nproc"], stdout=subprocess.PIPE, text=True, check=True)
+            cpu_cores = int(result.stdout.strip())
+            return cpu_cores
+        except subprocess.CalledProcessError as e:
+            print(f"call system nproc failed: {e}")
+        except ValueError:
+            print("can't convert nproc output to integer")
+        return None
+
+    @staticmethod
     def prepare_bpf_call(test, nsenter=[]):
         nsenter_prefix = (" ".join(nsenter) + " ") if len(nsenter) > 0 else ""
 
@@ -248,6 +260,8 @@ class Runner(object):
             return nsenter + [os.path.abspath(x) for x in cmd.split()]
 
         def check_expect(expect, output):
+            expect.expect = re.sub("{{EXPECT_NPROC}}", str(Runner.get_nproc()), expect.expect)
+
             try:
                 if expect.mode == "text":
                     # Raw text match on an entire line, ignoring leading/trailing whitespace

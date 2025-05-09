@@ -156,6 +156,7 @@ not known until test time. The following runtime variables are available for the
 
 * `{{BPFTRACE}}`: Path to bpftrace executable
 * `{{BEFORE_PID}}`: Process ID of the process in the first `BEFORE` directive
+* `{{EXPECT_NPROC}}`: The number of CPUs in all `EXPECT*` directive
 
 ### Test programs
 
