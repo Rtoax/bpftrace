@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     libcereal-dev \
     libdw-dev \
     libelf-dev \
+    libfmt-dev \
     libiberty-dev \
     libpcap-dev \
     llvm-dev \

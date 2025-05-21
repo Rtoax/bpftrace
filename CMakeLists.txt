@@ -106,6 +106,9 @@ include_directories(SYSTEM ${LIBELF_INCLUDE_DIRS})
 find_package(LibCereal REQUIRED)
 include_directories(SYSTEM ${LIBCEREAL_INCLUDE_DIRS})
 
+find_package(LibFmt REQUIRED)
+include_directories(SYSTEM ${LIBFMT_INCLUDE_DIRS})
+
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 # `parser_class_name` is deprecated and generates warnings in bison >= 3.3.

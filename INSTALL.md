@@ -261,6 +261,7 @@ Use specific OS build sections listed earlier if available.
 - A C++ compiler
 - Libbpf
 - Libbcc
+- Libfmt
 - CMake
 - Flex
 - Bison

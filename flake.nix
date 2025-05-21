@@ -162,6 +162,7 @@
                   pkgs.asciidoctor
                   pkgs.cereal
                   pkgs.elfutils
+                  pkgs.fmt
                   pkgs.gtest
                   pkgs.libbfd
                   pkgs.libelf

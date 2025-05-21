@@ -18,6 +18,7 @@ RUN dnf install -y \
         elfutils-libelf-devel \
         elfutils-libs \
         flex \
+        fmt-devel \
         gcc \
         gcc-c++ \
         libpcap-devel \

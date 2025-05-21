@@ -1,5 +1,5 @@
 #include <cstring>
-#include <format>
+#include <fmt/format.h>
 #include <string>
 
 #include "ast/ast.h"
@@ -14,7 +14,7 @@ namespace {
 
 std::string get_warning(const std::string &feature)
 {
-  return std::format("Script is using an unstable feature. To prevent this "
+  return fmt::format("Script is using an unstable feature. To prevent this "
                      "warning you must explicitly enable the unstable "
                      "feature in the config e.g. {}=enable",
                      feature);
@@ -22,7 +22,7 @@ std::string get_warning(const std::string &feature)
 
 std::string get_error(std::string &&feature)
 {
-  return std::format(
+  return fmt::format(
       "Feature not enabled by default. To enable "
       "this unstable feature, set the config flag to enable. {}=enable",
       feature);

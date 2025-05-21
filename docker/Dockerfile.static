@@ -20,6 +20,7 @@ RUN apk add --update \
   cmake \
   elfutils-dev \
   flex-dev \
+  fmt-dev \
   git \
   libbpf-dev \
   libelf-static \

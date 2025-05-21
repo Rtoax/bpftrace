@@ -103,6 +103,7 @@ endif(STATIC_LINKING)
 target_link_libraries(runtime debugfs tracefs util)
 target_link_libraries(runtime ${LIBBPF_LIBRARIES} ${ZLIB_LIBRARIES})
 target_link_libraries(libbpftrace parser resources runtime aot ast arch util cxxdemangler_llvm)
+target_link_libraries(libbpftrace ${LIBFMT_LIBRARIES})
 
 if(LIBPCAP_FOUND)
   target_link_libraries(libbpftrace ${LIBPCAP_LIBRARIES})
