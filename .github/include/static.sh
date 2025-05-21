@@ -17,6 +17,8 @@ docker build -t "$IMAGE" -f docker/Dockerfile.static docker/
 docker run -v $(pwd):$(pwd) -w $(pwd) -i "$IMAGE" <<'EOF'
 set -eux
 BUILD_DIR=build-static
+git config --global --add safe.directory $PWD
+git submodule update --init
 cmake -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DBUILD_TESTING=OFF -DSTATIC_LINKING=ON
 make -C "$BUILD_DIR" -j$(nproc)
 

@@ -96,6 +96,11 @@ jobs:
       run: |
         sudo modprobe nf_tables
         sudo modprobe xfs
+    - name: Sync git submodule
+      env: ${{matrix.env}}
+      run: |
+        git config --global --add safe.directory $PWD
+        git submodule update --init
     - name: Build and test
       env: ${{matrix.env}}
       run: ./.github/include/ci.py
