@@ -36,5 +36,5 @@ Checks:
 
 WarningsAsErrors: "*"
 UseColor: true
-HeaderFilterRegex: ".*"
+HeaderFilterRegex: '^(?!.*src/fmt).*$'
 ExcludeHeaderFilterRegex: ".*/(parser\\.tab|location)\\.hh"

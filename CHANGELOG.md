@@ -19,6 +19,8 @@ and this project adheres to
 - Ustack and kstack symbols are automatically enhanced with debug info if available
   - [#3999](https://github.com/bpftrace/bpftrace/pull/3999)
 #### Added
+- Add libfmt 11.2.0 source code to src/fmt.
+  - [#4127](https://github.com/bpftrace/bpftrace/pull/4127)
 - Add ncpus builtin to get the number of CPUs.
   - [#4105](https://github.com/bpftrace/bpftrace/pull/4105)
 - Use blazesym for user space address symbolization
