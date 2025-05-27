@@ -1,0 +1,28 @@
+#!./src/bpftrace
+tracepoint:syscalls:sys_enter_kill,
+tracepoint:syscalls:sys_enter_tkill,
+tracepoint:syscalls:sys_enter_tgkill
+{
+	@tpid[tid] = args.pid;
+	@tsig[tid] = args.sig;
+}
+
+tracepoint:syscalls:sys_exit_kill,
+tracepoint:syscalls:sys_exit_tkill,
+tracepoint:syscalls:sys_exit_tgkill
+/@tpid[tid]/
+{
+//	$curtask = curtask;
+	$ttask = task_from_pid(@tpid[tid]);
+
+	if ($ttask) {
+		printf("<%-16s %-8d> ", $ttask->comm, $ttask->pid);
+		task_release($ttask);
+	}
+
+	printf("%-15s %8d %-16s %4d %8d %6d\n",
+		strftime("%H:%M:%S.%f", nsecs),
+		pid, comm, @tsig[tid], @tpid[tid], args.ret);
+	delete(@tpid, tid);
+	delete(@tsig, tid);
+}

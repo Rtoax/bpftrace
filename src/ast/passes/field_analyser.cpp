@@ -38,6 +38,7 @@ public:
   void visit(Unop &unop);
   void visit(Probe &probe);
   void visit(Subprog &subprog);
+  void visit(Call &call);
 
 private:
   void resolve_args(Probe &probe);
@@ -104,6 +105,19 @@ void FieldAnalyser::visit(Builtin &builtin)
 
   if (bpftrace_.has_btf_data())
     sized_type_ = bpftrace_.btf_->get_stype(builtin_type);
+}
+
+void FieldAnalyser::visit(Call &call)
+{
+  std::string call_type;
+  sized_type_ = CreateNone();
+
+  if (call.func == "task_from_pid") {
+    call_type = "struct task_struct";
+  }
+
+  if (bpftrace_.has_btf_data())
+    sized_type_ = bpftrace_.btf_->get_stype(call_type);
 }
 
 void FieldAnalyser::visit(Map &map)
