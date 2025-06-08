@@ -15,4 +15,5 @@ int main()
     (*i)++;
     usleep(1000);
   }
+  free(i);
 }

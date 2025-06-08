@@ -34,4 +34,5 @@ int main()
   }
 
   clear(c, size);
+  free(c);
 }

@@ -6,8 +6,9 @@
 
 int main()
 {
+  size_t len = 2 << 20;
   volatile void* addr = mmap((void*)0x10000000,
-                             2 << 20,
+                             len,
                              PROT_READ | PROT_WRITE,
                              MAP_PRIVATE | MAP_ANONYMOUS,
                              -1,
@@ -35,4 +36,5 @@ int main()
   }
 
   umask(old_umask);
+  munmap((void *)addr, len);
 }

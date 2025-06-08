@@ -7,9 +7,10 @@
 
 void *work(void *)
 {
+  size_t len = 2 << 20;
   printf("Working...\n");
   volatile void *addr = mmap((void *)0x10000000,
-                             2 << 20,
+                             len,
                              PROT_READ | PROT_WRITE,
                              MAP_PRIVATE | MAP_ANONYMOUS,
                              -1,
@@ -27,6 +28,7 @@ void *work(void *)
     usleep(250 * 1000);
   }
 
+  munmap((void *)addr, len);
   return NULL;
 }
 
