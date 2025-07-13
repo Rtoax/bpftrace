@@ -727,6 +727,13 @@ FuncParamLists BTF::get_params_from_btf(
   return params;
 }
 
+FuncParamLists BTF::get_kprobes_params_from_btf(
+    const BTFObj &btf_obj,
+    const std::set<std::string> &kprobes) const
+{
+  return {};
+}
+
 FuncParamLists BTF::get_raw_tracepoints_params_from_btf(
     const BTFObj &btf_obj,
     const std::set<std::string> &rawtracepoints) const
@@ -829,6 +836,16 @@ FuncParamLists BTF::get_params(const std::set<std::string> &funcs) const
       funcs, [this](const BTFObj &btf_obj, const std::set<std::string> &funcs) {
         return get_params_from_btf(btf_obj, funcs);
       });
+}
+
+FuncParamLists BTF::get_kprobe_params(
+    const std::set<std::string> &kprobes) const
+{
+  return get_params_impl(kprobes,
+                         [this](const BTFObj &btf_obj,
+                                const std::set<std::string> &funcs) {
+                           return get_kprobes_params_from_btf(btf_obj, funcs);
+                         });
 }
 
 FuncParamLists BTF::get_rawtracepoint_params(
