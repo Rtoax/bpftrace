@@ -13,6 +13,7 @@
 #include <unordered_set>
 
 #include "ast/pass_manager.h"
+#include "probe_types.h"
 
 // Taken from libbpf
 #define BTF_INFO_ENC(kind, kind_flag, vlen)                                    \
@@ -100,6 +101,7 @@ public:
   std::unordered_set<std::string> get_all_iters() const;
   std::unique_ptr<std::istream> get_all_raw_tracepoints();
   FuncParamLists get_params(const std::set<std::string>& funcs) const;
+  FuncParamLists get_kprobes_params(const std::set<std::string>& funcs) const;
   FuncParamLists get_rawtracepoint_params(
       const std::set<std::string>& rawtracepoints) const;
 
@@ -140,7 +142,8 @@ private:
                                    const std::set<std::string>& funcs)>
           get_param_btf_cb) const;
   FuncParamLists get_params_from_btf(const BTFObj& btf_obj,
-                                     const std::set<std::string>& funcs) const;
+                                     const std::set<std::string>& funcs,
+                                     const ProbeType probe_type) const;
   FuncParamLists get_raw_tracepoints_params_from_btf(
       const BTFObj& btf_obj,
       const std::set<std::string>& rawtracepoints) const;

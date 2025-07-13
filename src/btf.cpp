@@ -654,9 +654,9 @@ std::unique_ptr<std::istream> BTF::get_all_raw_tracepoints()
   return std::make_unique<std::stringstream>(all_rawtracepoints_);
 }
 
-FuncParamLists BTF::get_params_from_btf(
-    const BTFObj &btf_obj,
-    const std::set<std::string> &funcs) const
+FuncParamLists BTF::get_params_from_btf(const BTFObj &btf_obj,
+                                        const std::set<std::string> &funcs,
+                                        const ProbeType probe_type) const
 {
   std::stringstream type;
   auto *dump = dump_new(btf_obj.btf, dump_printf, &type);
@@ -681,8 +681,14 @@ FuncParamLists BTF::get_params_from_btf(
     if (!btf_is_func(t))
       continue;
 
-    const auto func_name = btf_obj.name + ":" +
-                           btf__name_by_offset(btf_obj.btf, t->name_off);
+    std::string func_name = "";
+
+    // fentry need add "vmlinux:" prefix, kprobe only need function name.
+    if (probe_type == ProbeType::fentry || probe_type == ProbeType::fexit)
+      func_name += btf_obj.name + ":";
+
+    func_name += btf__name_by_offset(btf_obj.btf, t->name_off);
+
     if (!funcs.contains(func_name))
       continue;
 
@@ -708,8 +714,12 @@ FuncParamLists BTF::get_params_from_btf(
       params[func_name].push_back(type.str() + " " + arg_name);
     }
 
-    if (!t->type)
+    if (!t->type) {
+      // if return type is "void", kprobe need it.
+      if (probe_type == ProbeType::kprobe || probe_type == ProbeType::kretprobe)
+        params[func_name].push_back("void");
       continue;
+    }
 
     // set by dump_printf callback
     type.str("");
@@ -718,7 +728,13 @@ FuncParamLists BTF::get_params_from_btf(
       break;
     }
 
-    params[func_name].push_back(type.str() + " retval");
+    std::string ret_str = type.str();
+
+    // kprobe need return type string only.
+    if (probe_type == ProbeType::fentry || probe_type == ProbeType::fexit)
+      ret_str += " retval";
+
+    params[func_name].push_back(ret_str);
   }
 
   if (id != (max + 1))
@@ -827,7 +843,15 @@ FuncParamLists BTF::get_params(const std::set<std::string> &funcs) const
 {
   return get_params_impl(
       funcs, [this](const BTFObj &btf_obj, const std::set<std::string> &funcs) {
-        return get_params_from_btf(btf_obj, funcs);
+        return get_params_from_btf(btf_obj, funcs, ProbeType::fentry);
+      });
+}
+
+FuncParamLists BTF::get_kprobes_params(const std::set<std::string> &funcs) const
+{
+  return get_params_impl(
+      funcs, [this](const BTFObj &btf_obj, const std::set<std::string> &funcs) {
+        return get_params_from_btf(btf_obj, funcs, ProbeType::kprobe);
       });
 }
 

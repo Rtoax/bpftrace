@@ -486,10 +486,14 @@ void ProbeMatcher::list_probes(ast::Program* prog)
           param_lists = get_iters_params(matches);
         else if (probe_type == ProbeType::uprobe)
           param_lists = get_uprobe_params(matches);
+        else if (probe_type == ProbeType::kprobe ||
+                 probe_type == ProbeType::kretprobe)
+          param_lists = bpftrace_->btf_->get_kprobes_params(matches);
       }
 
       for (const auto& match : matches) {
         std::string match_print = match;
+        std::string func_name = match;
         if (ap->lang == "cpp") {
           std::string target = util::erase_prefix(match_print);
           char* demangled_name = cxxdemangle(match_print.c_str());
@@ -505,12 +509,35 @@ void ProbeMatcher::list_probes(ast::Program* prog)
                                      : match_print;
 
           match_print = target + ":" + ap->lang + ":" + func;
+          func_name = func;
         }
 
         std::cout << probe_type << ":" << match_print << std::endl;
         if (bt_verbose) {
-          for (auto& param : param_lists[match])
-            std::cout << "    " << param << std::endl;
+          if (probe_type == ProbeType::kprobe ||
+              probe_type == ProbeType::kretprobe) {
+            auto& params = param_lists[match];
+            size_t count = params.size();
+
+            if (count == 0)
+              // not found this kprobe
+              continue;
+            else if (count == 1)
+              std::cout << "    void " << func_name << "();" << std::endl;
+            else {
+              std::cout << "    " << params.back() << " " << func_name << "(";
+
+              for (size_t i = 0; i < count - 1; i++) {
+                std::cout << params[i];
+                if (i != count - 2)
+                  std::cout << ", ";
+              }
+              std::cout << ");" << std::endl;
+            }
+          } else {
+            for (auto& param : param_lists[match])
+              std::cout << "    " << param << std::endl;
+          }
         }
       }
     }
