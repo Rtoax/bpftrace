@@ -38,6 +38,7 @@ Pass CreateTypeSystemPass()
     return result;
   };
 
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("TypeSystem", fn);
 }
 

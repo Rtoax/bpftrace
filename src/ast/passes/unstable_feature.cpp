@@ -147,6 +147,7 @@ void UnstableFeature::visit(VariableAddr &var_addr)
 
 Pass CreateUnstableFeaturePass()
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("UnstableFeature", [](ASTContext &ast, BPFtrace &b) {
     std::unordered_set<std::string> macros;
     for (Macro *macro : ast.root->macros) {

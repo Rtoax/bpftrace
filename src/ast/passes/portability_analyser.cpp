@@ -116,6 +116,7 @@ Pass CreatePortabilityPass()
     }
   };
 
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("PortabilityAnalyser", fn);
 }
 

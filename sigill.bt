@@ -1,0 +1,41 @@
+#!/usr/bin/env bpftrace
+#ifndef BPFTRACE_HAVE_BTF
+#endif
+
+BEGIN
+{
+	printf("start----------------------------------------\n");
+}
+
+/*
+uprobe:/bin/bash:readline
+{
+	$bias = (uint64)0x55dfaf227000;
+	$addr = (uint64)uaddr("ps1_prompt");
+	$addr += $bias;
+
+	printf("pid %d, ps1_prompt: 0x%lx <%s>\n", pid, $addr, str(*$addr));
+	printf("pid %d, environ: 0x%lx\n", pid, uaddr("environ"));
+}
+*/
+
+/*
+uprobe:/bin/bash:readline
+{
+	$bias = (uint64)0x55dfaf227000;
+
+	printf("pid %d, %s, %lx, %lx(%s), <%s>\n", pid, comm, uaddr("ps1_prompt"),
+		reg("ip"),
+		usym(reg("ip")),
+		str(arg0));
+}
+*/
+
+i:s:1
+{
+	$a = (void *)0;
+	$b = $a + 1;
+	//printf("----------\n");
+	@[$b] = count();
+	//printf("%p\n", $b);
+}

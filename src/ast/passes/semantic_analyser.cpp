@@ -4616,6 +4616,7 @@ Pass CreateSemanticPass(bool listing)
     semantics.analyse();
   };
 
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("Semantic", fn);
 };
 

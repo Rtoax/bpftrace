@@ -2845,6 +2845,7 @@ ScopedExpr CodegenLLVM::visit(MapAccess &acc)
 
 ScopedExpr CodegenLLVM::visit(Cast &cast)
 {
+  //std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   auto scoped_expr = visit(cast.expr);
   if (cast.cast_type.IsIntTy()) {
     auto *int_ty = b_.GetType(cast.cast_type);
@@ -5324,12 +5325,14 @@ Pass CreateLLVMInitPass()
   LLVMInitializeBPFTarget();
   LLVMInitializeBPFTargetMC();
   LLVMInitializeBPFAsmPrinter();
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("llvm-init", [] { return CompileContext(); });
 }
 
 Pass CreateCompilePass(
     std::optional<std::reference_wrapper<USDTHelper>> &&usdt_helper)
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("compile",
                       [usdt_helper](ASTContext &ast,
                                     BPFtrace &bpftrace,
@@ -5354,6 +5357,7 @@ Pass CreateCompilePass(
 
 Pass CreateLinkBitcodePass()
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create(
       "LinkBitcode", [](BitcodeModules &bm, CompiledModule &cm) -> Result<> {
         for (auto &mod : bm.modules) {
@@ -5396,6 +5400,7 @@ Pass CreateLinkBitcodePass()
 
 Pass CreateVerifyPass()
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("verify", [](CompiledModule &cm) -> Result<> {
     std::stringstream ss;
     raw_os_ostream OS(ss);
@@ -5411,6 +5416,7 @@ Pass CreateVerifyPass()
 
 Pass CreateOptimizePass()
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("optimize", [](CompiledModule &cm) {
     PipelineTuningOptions pto;
     pto.LoopUnrolling = false;
@@ -5441,6 +5447,7 @@ Pass CreateOptimizePass()
 
 Pass CreateDumpIRPass(std::ostream &out)
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("dump-ir", [&out](CompiledModule &cm) {
     raw_os_ostream os(out);
     cm.module->print(os, nullptr, false, true);
@@ -5451,6 +5458,7 @@ Pass CreateDumpIRPass(std::ostream &out)
 
 Pass CreateObjectPass()
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("object", [](CompiledModule &cm) {
     SmallVector<char, 0> output;
     raw_svector_ostream os(output);
@@ -5470,6 +5478,7 @@ Pass CreateObjectPass()
 
 Pass CreateDumpASMPass([[maybe_unused]] std::ostream &out)
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("dump-asm", [](BpfObject &bpf) {
     // Technically we could use LLVM APIs to do a proper disassemble on
     // the in-memory ELF file. But that is quite complex, as LLVM only

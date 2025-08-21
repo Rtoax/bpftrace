@@ -779,6 +779,7 @@ AttachPointParser::State AttachPointParser::raw_tracepoint_parser()
 // Note: listing changes the parsing semantics for attach points
 Pass CreateParseAttachpointsPass(bool listing)
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("attachpoints", [listing](ASTContext &ast, BPFtrace &b) {
     AttachPointParser ap_parser(ast, b, listing);
     ap_parser.parse();

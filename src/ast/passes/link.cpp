@@ -18,6 +18,7 @@ void LinkError::log(llvm::raw_ostream &OS) const
 
 Pass CreateExternObjectPass()
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("extern", [](Imports &imports) {
     BpfExternObjects result;
     for (const auto &[name, obj] : imports.objects) {
@@ -29,6 +30,7 @@ Pass CreateExternObjectPass()
 
 Pass CreateLinkPass()
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create(
       "link", [](BpfObject &obj, BpfExternObjects &ext) -> Result<BpfBytecode> {
         // If there are no other objects to link, then just return our own.

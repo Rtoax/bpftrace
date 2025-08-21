@@ -68,6 +68,7 @@ inline std::vector<Pass> AllCompilePasses(
     std::optional<std::reference_wrapper<USDTHelper>> &&usdt_helper =
         std::nullopt)
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   std::vector<Pass> passes;
   passes.emplace_back(CreateCompilePass(std::move(usdt_helper)));
   passes.emplace_back(CreateLinkBitcodePass());
@@ -76,6 +77,7 @@ inline std::vector<Pass> AllCompilePasses(
   passes.emplace_back(CreateObjectPass());
   passes.emplace_back(CreateExternObjectPass());
   passes.emplace_back(CreateLinkPass());
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return passes;
 }
 

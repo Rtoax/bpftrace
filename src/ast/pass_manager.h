@@ -257,26 +257,42 @@ private:
         [fn](PassContext &ctx) -> Result<> {
           // Extract a tuple of all input parameters, apply the function
           // and set the result.
+        try {
+          std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
           auto args = std::make_tuple(std::ref(ctx.get<Inputs>())...);
+          std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
+          std::cout << "Function valid: " << static_cast<bool>(fn) << std::endl;
+          std::cout << "Number of inputs: " << sizeof...(Inputs) << std::endl;
           auto result = std::apply(fn, args);
+          std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
           if (!result) {
             return result.takeError();
           }
+          std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
           if constexpr (std::is_same_v<Return, OK>) {
+          std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
             return OK();
           } else {
+          std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
             static_assert(
                 std::is_base_of_v<PassContext::State, std::decay_t<Return>>,
                 "return value must be derived from State<...>");
             if constexpr (std::is_reference_v<Return>) {
               // Add the external reference.
               ctx.put(*result);
+          std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
             } else {
+          std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
               // Just move the result.
               ctx.put(std::move(*result));
             }
+          std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
             return OK();
           }
+        } catch (const std::exception& e) {
+          return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                      "Exception in pass: " + std::string(e.what()));
+        }
         });
   }
 

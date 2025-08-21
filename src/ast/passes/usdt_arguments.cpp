@@ -91,6 +91,7 @@ void USDTArgumentLift::visit(Expression &expr)
 
 Pass CreateUSDTImportPass()
 {
+  std::cout << __FILE__ << ":" << __func__ << ":" << __LINE__ << std::endl;
   return Pass::create("USDTImport",
                       [](ASTContext &ast, Imports &imports) -> Result<> {
                         bool has_usdt = false;
