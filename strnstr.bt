@@ -1,0 +1,13 @@
+#!/bin/env bpftrace
+
+tracepoint:syscalls:sys_enter_openat
+/ strnstr(comm, "open", 5) >= 0 /
+{
+	printf("strnstr: %s %d %s\n", comm, pid, args->filename);
+}
+
+tracepoint:syscalls:sys_enter_openat
+/ strstr(comm, "open") >= 0 /
+{
+	printf("strstr:  %s %d %s\n", comm, pid, args->filename);
+}
