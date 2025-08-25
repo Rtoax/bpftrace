@@ -8,11 +8,33 @@ namespace bpftrace {
 enum class Kfunc {
   bpf_map_sum_elem_count,
   bpf_session_is_return,
+  bpf_strcmp,
+  bpf_strchr,
+  bpf_strchrnul,
+  bpf_strnchr,
+  bpf_strrchr,
+  bpf_strlen,
+  bpf_strnlen,
+  bpf_strspn,
+  bpf_strcspn,
+  bpf_strnstr,
+  bpf_strstr,
 };
 
 static const std::map<Kfunc, std::string> KFUNC_NAME_MAP = {
   { Kfunc::bpf_map_sum_elem_count, "bpf_map_sum_elem_count" },
   { Kfunc::bpf_session_is_return, "bpf_session_is_return" },
+  { Kfunc::bpf_strcmp, "bpf_strcmp" },
+  { Kfunc::bpf_strchr, "bpf_strchr" },
+  { Kfunc::bpf_strchrnul, "bpf_strchrnul" },
+  { Kfunc::bpf_strnchr, "bpf_strnchr" },
+  { Kfunc::bpf_strrchr, "bpf_strrchr" },
+  { Kfunc::bpf_strlen, "bpf_strlen" },
+  { Kfunc::bpf_strnlen, "bpf_strnlen" },
+  { Kfunc::bpf_strspn, "bpf_strspn" },
+  { Kfunc::bpf_strcspn, "bpf_strcspn" },
+  { Kfunc::bpf_strnstr, "bpf_strnstr" },
+  { Kfunc::bpf_strstr, "bpf_strstr" },
 };
 
 inline const std::string &kfunc_name(enum Kfunc kfunc)
