@@ -3360,6 +3360,25 @@ ScopedExpr CodegenLLVM::visit(Predicate &pred)
 
   auto scoped_expr = visit(pred.expr);
 
+// 添加调试输出
+llvm::Type* scoped_type = scoped_expr.value()->getType();
+llvm::Type* null_type = pred.expr.type().IsBoolTy() 
+                        ? b_.getInt1Ty() 
+                        : b_.GetType(pred.expr.type());
+
+// 打印类型信息（需要适当的日志机制）
+std::string scoped_type_str;
+llvm::raw_string_ostream rso_scoped(scoped_type_str);
+scoped_type->print(rso_scoped);
+
+std::string null_type_str;
+llvm::raw_string_ostream rso_null(null_type_str);
+null_type->print(rso_null);
+
+// 记录或输出这些类型信息
+	std::cout << "scoped_type: " << scoped_type_str << std::endl;
+	std::cout << "null_type: " << null_type_str << std::endl;
+
   auto *cmp_value = b_.CreateICmpEQ(scoped_expr.value(),
                                     Constant::getNullValue(
                                         b_.GetType(pred.expr.type())),
