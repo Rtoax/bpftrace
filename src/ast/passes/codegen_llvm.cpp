@@ -3354,12 +3354,11 @@ ScopedExpr CodegenLLVM::visit(Predicate &pred)
 
   auto scoped_expr = visit(pred.expr);
 
-  auto *cmp_value = b_.CreateICmpEQ(scoped_expr.value(),
-                                    Constant::getNullValue(
-                                        pred.expr.type().IsBoolTy()
-                                            ? b_.getInt1Ty()
-                                            : b_.GetType(pred.expr.type())),
-                                    "predcond");
+  // allow unop casts in predicates:
+  auto *cast_value = b_.CreateIntCast(scoped_expr.value(),
+                                      b_.getInt64Ty(),
+                                      false);
+  auto *cmp_value = b_.CreateICmpEQ(cast_value, b_.getInt64(0), "predcond");
 
   b_.CreateCondBr(cmp_value, pred_false_block, pred_true_block);
   b_.SetInsertPoint(pred_false_block);
