@@ -541,7 +541,7 @@ ScopedExpr CodegenLLVM::visit(NegativeInteger &integer)
 
 ScopedExpr CodegenLLVM::visit(Boolean &boolean)
 {
-  return ScopedExpr(b_.getInt8(boolean.value ? 1 : 0));
+  return ScopedExpr(b_.getInt1(boolean.value));
 }
 
 ScopedExpr CodegenLLVM::visit(String &string)
@@ -2503,8 +2503,14 @@ ScopedExpr CodegenLLVM::unop_ptr(Unop &unop)
 ScopedExpr CodegenLLVM::visit(Unop &unop)
 {
   const SizedType &type = unop.expr.type();
-  if (type.IsIntegerTy() || type.IsBoolTy()) {
+  if (type.IsIntegerTy()) {
     return unop_int(unop);
+  } else if (type.IsBoolTy()) {
+    assert(unop.op == Operator::LNOT);
+    ScopedExpr scoped_expr = visit(unop.expr);
+    Value *zero_value = Constant::getNullValue(b_.getInt1Ty());
+    Value *expr = b_.CreateICmpEQ(scoped_expr.value(), zero_value);
+    return ScopedExpr(expr);
   } else if (type.IsPtrTy() || type.IsCtxAccess()) // allow dereferencing args
   {
     return unop_ptr(unop);
@@ -2866,11 +2872,11 @@ ScopedExpr CodegenLLVM::visit(Cast &cast)
     } else if (cast.expr.type().IsPtrTy()) {
       return ScopedExpr(b_.CreatePtrToInt(scoped_expr.value(), int_ty));
     } else {
-      return ScopedExpr(
-          b_.CreateIntCast(scoped_expr.value(),
-                           b_.getIntNTy(cast.cast_type.GetIntBitWidth()),
-                           cast.cast_type.IsSigned(),
-                           "cast"));
+      return ScopedExpr(b_.CreateIntCast(
+          scoped_expr.value(),
+          b_.getIntNTy(cast.cast_type.GetIntBitWidth()),
+          cast.expr.type().IsBoolTy() ? false : cast.cast_type.IsSigned(),
+          "cast"));
     }
   } else if (cast.cast_type.IsArrayTy() && cast.expr.type().IsIntTy()) {
     // We need to store the cast integer on stack and reinterpret the pointer to
@@ -3356,9 +3362,7 @@ ScopedExpr CodegenLLVM::visit(Predicate &pred)
 
   auto *cmp_value = b_.CreateICmpEQ(scoped_expr.value(),
                                     Constant::getNullValue(
-                                        pred.expr.type().IsBoolTy()
-                                            ? b_.getInt1Ty()
-                                            : b_.GetType(pred.expr.type())),
+                                        b_.GetType(pred.expr.type())),
                                     "predcond");
 
   b_.CreateCondBr(cmp_value, pred_false_block, pred_true_block);
