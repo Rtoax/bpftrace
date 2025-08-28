@@ -96,6 +96,7 @@ public:
   bool has_uprobe_multi();
   bool has_skb_output();
   bool has_prog_fentry();
+  bool has_strncmp();
   // These are virtual so they can be overridden in tests by the mock
   virtual bool has_fentry();
   virtual bool has_kernel_func(Kfunc kfunc);
@@ -140,6 +141,7 @@ protected:
   std::optional<bool> has_prog_fentry_;
   std::optional<bool> has_btf_func_global_;
   std::optional<bool> has_kernel_dwarf_;
+  std::optional<bool> has_strncmp_;
 
   std::unordered_map<Kfunc, bool> available_kernel_funcs_;
 

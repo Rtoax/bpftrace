@@ -376,6 +376,57 @@ bool BPFfeature::has_d_path()
   return *has_d_path_;
 }
 
+bool BPFfeature::has_strncmp()
+{
+  if (has_strncmp_.has_value())
+    return *has_strncmp_;
+
+  struct bpf_insn insns[] = {
+#if 0
+    BPF_MOV64_REG(BPF_REG_2, BPF_REG_10),
+    BPF_ALU64_IMM(BPF_ADD, BPF_REG_2, -16),
+    // Store s1 = "hello"
+    BPF_ST_MEM(BPF_DW, BPF_REG_2, 0, 0x6c6c6548),
+    BPF_ST_MEM(BPF_DW, BPF_REG_2, 8, 0x6f77206f),
+    BPF_MOV64_REG(BPF_REG_1, BPF_REG_2),
+    // size of s1
+    BPF_MOV64_IMM(BPF_REG_2, 12),
+    // s2
+    BPF_MOV64_REG(BPF_REG_3, BPF_REG_10),
+    BPF_ALU64_IMM(BPF_SUB, BPF_REG_3, 16),
+    BPF_RAW_INSN(BPF_JMP | BPF_CALL, 0, 0, 0, libbpf::BPF_FUNC_strncmp),
+    BPF_MOV64_IMM(BPF_REG_0, 0),
+    BPF_EXIT_INSN(),
+#else
+			BPF_MOV64_IMM(BPF_REG_1, 0x21),        /* '!' */
+		BPF_STX_MEM(BPF_H, BPF_REG_10, BPF_REG_1, -4),
+		BPF_MOV64_IMM(BPF_REG_1, 0x646c726f),   /* 'orld' */
+		BPF_STX_MEM(BPF_W, BPF_REG_10, BPF_REG_1, -8),
+		BPF_MOV64_IMM(BPF_REG_1, 0x57202c6f),   /* 'o, W' */
+		BPF_STX_MEM(BPF_W, BPF_REG_10, BPF_REG_1, -12),
+		BPF_MOV64_IMM(BPF_REG_1, 0x6c6c6548),   /* 'Hell' */
+		BPF_STX_MEM(BPF_W, BPF_REG_10, BPF_REG_1, -16),
+		BPF_MOV64_IMM(BPF_REG_1, 0),
+		BPF_STX_MEM(BPF_B, BPF_REG_10, BPF_REG_1, -2),
+		BPF_MOV64_REG(BPF_REG_1, BPF_REG_10),
+		BPF_ALU64_IMM(BPF_ADD, BPF_REG_1, -16),
+		BPF_MOV64_IMM(BPF_REG_2, 15),
+		BPF_RAW_INSN(BPF_JMP|BPF_CALL, 0,0,0, BPF_FUNC_trace_printk),
+		BPF_MOV64_IMM(BPF_REG_0, 0),
+		BPF_EXIT_INSN(),
+
+	  #endif
+  };
+
+  has_strncmp_ = std::make_optional<bool>(
+      try_load(libbpf::BPF_PROG_TYPE_TRACING,
+               insns,
+               ARRAY_SIZE(insns),
+               "dentry_open",
+               libbpf::BPF_TRACE_FENTRY));
+  return *has_strncmp_;
+}
+
 bool try_create_link(libbpf::bpf_prog_type prog_type,
                      const std::string_view prog_name,
                      libbpf::bpf_attach_type expected_attach_type,
@@ -583,6 +634,7 @@ std::string BPFfeature::report()
     { "for_each_map_elem", to_str(has_helper_for_each_map_elem()) },
     { "get_ns_current_pid_tgid", to_str(has_helper_get_ns_current_pid_tgid()) },
     { "lookup_percpu_elem", to_str(has_helper_map_lookup_percpu_elem()) },
+    { "strncmp", to_str(has_strncmp()) },
   };
 
   std::vector<std::pair<std::string, std::string>> features = {

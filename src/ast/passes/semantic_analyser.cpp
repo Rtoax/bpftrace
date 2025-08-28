@@ -1774,6 +1774,10 @@ void SemanticAnalyser::visit(Call &call)
     if (!call.vargs.at(2).is<Integer>()) {
       call.addError() << "Builtin strncmp requires a non-negative literal";
     }
+    if (!bpftrace_.feature_->has_strncmp()) {
+      call.addError()
+          << "BPF_FUNC_strncmp not available for your kernel version";
+    }
     call.return_type = CreateUInt64();
   } else if (call.func == "strcontains") {
     static constexpr auto warning = R"(
