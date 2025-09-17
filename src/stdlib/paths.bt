@@ -1,0 +1,7 @@
+// Path helpers.
+//
+// This file contains various path-related functions and helpers.
+
+macro fs_root() {
+  curtask->fs
+}

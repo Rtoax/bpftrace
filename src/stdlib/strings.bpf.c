@@ -31,3 +31,38 @@ long __bpf_strnstr(const char *haystack,
   }
   return -ENOSYS;
 }
+
+//long bpf_snprintf(char *str, __u32 str_size, const char *fmt, __u64 *data, __u32 data_len);
+//extern int bpf_snprintf(char *str, unsigned int str_size, char *fmt, const void *args, unsigned int date_len);
+
+long __bpf_str_append(char *dst, size_t dst_sz, const char *src)
+{
+#if 0
+  if (!dst || !src)
+    return -1;
+  while (*(dst++));
+  int i;
+  for (i = 0; src[i] && i < 256; i++) {
+    dst[i] = src[i];
+  }
+  dst[i] = '\0';
+#elif 0
+  int i, j;
+  for (i = 0; dst[i] != '\0'; i++);
+  for (j = 0; src[j] != '\0'; j++) {
+    if (i >= dst_sz - 1) {
+      break;
+    }
+    dst[i] = src[j];
+    i++;
+  }
+  if (i < dst_sz) {
+    dst[i] = '\0';
+  } else {
+    dst[dst_sz - 1] = '\0';
+  }
+#elif 0
+  bpf_snprintf(dst, dst_sz, "%s%s", dst, src);
+#endif
+  return 0;
+}
