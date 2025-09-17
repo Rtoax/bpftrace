@@ -70,6 +70,13 @@ macro __strnlen(ptr, max_size) {
   }
 }
 
+macro __strcmp(s1, s2) {
+  $cmp = __bpf_strcmp(s1, s2);
+  if ($cmp != -ENOSYS) {
+    (int64)$cmp
+  }
+}
+
 // Returns the "capacity" of a string-like object.
 //
 // In most cases this is the same as the length, but for bpftrace-native

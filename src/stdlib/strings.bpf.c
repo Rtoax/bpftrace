@@ -31,3 +31,13 @@ long __bpf_strnstr(const char *haystack,
   }
   return -ENOSYS;
 }
+
+extern int bpf_strcmp(const char *s1__ign, const char *s2__ign) __ksym __weak;
+
+long __bpf_strcmp(const char *s1, const char *s2)
+{
+  if (bpf_strcmp) {
+    return bpf_strcmp(s1, s2);
+  }
+  return -ENOSYS; // Not available, must fall back.
+}
