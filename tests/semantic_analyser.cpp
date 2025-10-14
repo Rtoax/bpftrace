@@ -291,7 +291,7 @@ TEST_F(SemanticAnalyserTest, builtin_functions)
   test("kprobe:f { kstack(1) }");
   test("kprobe:f { ustack(1) }");
   test("kprobe:f { cat(\"/proc/uptime\") }");
-  test("uprobe:/bin/sh:main { uaddr(\"glob_asciirange\") }");
+  test("uprobe:/bin/sh:main { elfaddr(\"glob_asciirange\") }");
   test("kprobe:f { cgroupid(\"/sys/fs/cgroup/unified/mycg\"); }");
   test("kprobe:f { macaddr(0xffff) }");
   test("kprobe:f { nsecs() }");
@@ -1407,42 +1407,42 @@ TEST_F(SemanticAnalyserTest, call_kaddr)
   test("kprobe:f { kaddr(123); }", Error{});
 }
 
-TEST_F(SemanticAnalyserTest, call_uaddr)
+TEST_F(SemanticAnalyserTest, call_elfaddr)
 {
   test("u:/bin/sh:main { "
-       "uaddr(\"github.com/golang/"
+       "elfaddr(\"github.com/golang/"
        "glog.severityName\"); }");
   test("uprobe:/bin/sh:main { "
-       "uaddr(\"glob_asciirange\"); }");
+       "elfaddr(\"glob_asciirange\"); }");
   test("u:/bin/sh:main,u:/bin/sh:readline "
-       "{ uaddr(\"glob_asciirange\"); }");
+       "{ elfaddr(\"glob_asciirange\"); }");
   test("uprobe:/bin/sh:main { @x = "
-       "uaddr(\"glob_asciirange\"); }");
-  test("uprobe:/bin/sh:main { uaddr(); }", Error{});
-  test("uprobe:/bin/sh:main { uaddr(123); }", Error{});
+       "elfaddr(\"glob_asciirange\"); }");
+  test("uprobe:/bin/sh:main { elfaddr(); }", Error{});
+  test("uprobe:/bin/sh:main { elfaddr(123); }", Error{});
   test("uprobe:/bin/sh:main { "
-       "uaddr(\"?\"); }",
+       "elfaddr(\"?\"); }",
        Error{});
   test("uprobe:/bin/sh:main { $str = "
-       "\"glob_asciirange\"; uaddr($str); }",
+       "\"glob_asciirange\"; elfaddr($str); }",
        Error{});
   test("uprobe:/bin/sh:main { @str = "
-       "\"glob_asciirange\"; uaddr(@str); }",
+       "\"glob_asciirange\"; elfaddr(@str); }",
        Error{});
 
-  test("k:f { uaddr(\"A\"); }", Error{});
-  test("i:s:1 { uaddr(\"A\"); }", Error{});
+  test("k:f { elfaddr(\"A\"); }", Error{});
+  test("i:s:1 { elfaddr(\"A\"); }", Error{});
 
   // The C struct parser should set the
   // is_signed flag on signed types
   BPFtrace bpftrace;
   std::string prog = "uprobe:/bin/sh:main {"
-                     "$a = uaddr(\"12345_1\");"
-                     "$b = uaddr(\"12345_2\");"
-                     "$c = uaddr(\"12345_4\");"
-                     "$d = uaddr(\"12345_8\");"
-                     "$e = uaddr(\"12345_5\");"
-                     "$f = uaddr(\"12345_33\");"
+                     "$a = elfaddr(\"12345_1\");"
+                     "$b = elfaddr(\"12345_2\");"
+                     "$c = elfaddr(\"12345_4\");"
+                     "$d = elfaddr(\"12345_8\");"
+                     "$e = elfaddr(\"12345_5\");"
+                     "$f = elfaddr(\"12345_33\");"
                      "}";
 
   auto ast = test(prog);
