@@ -6,6 +6,7 @@
 #include <glob.h>
 #include <iostream>
 #include <regex>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "log.h"
@@ -245,6 +246,29 @@ std::optional<std::filesystem::path> find_near_self(std::string_view filename)
   return exe;
 }
 
+// Return 0 if failed, Otherwise, return inode number.
+unsigned long file_ino(const std::string &path)
+{
+  int fd, err;
+  struct stat stbuf;
+
+  fd = open(path.c_str(), O_RDONLY, 0);
+  if (fd < 0) {
+    return 0;
+  }
+  SCOPE_EXIT
+  {
+    ::close(fd);
+  };
+
+  err = stat(path.c_str(), &stbuf);
+  if (err == -1) {
+    return 0;
+  }
+
+  return stbuf.st_ino;
+}
+
 bool is_dir(const std::string &path)
 {
   std::error_code ec;
@@ -259,6 +283,63 @@ bool is_exe(const std::string &path)
     return e_type == ET_EXEC && has_exec_permission(path);
   }
   return false;
+}
+
+bool is_elf_pie(const std::string &path)
+{
+  int fd, res = false;
+  size_t i, j, shdrnum;
+  Elf *elf;
+
+  if (elf_version(EV_CURRENT) == EV_NONE) {
+    return false;
+  }
+
+  fd = open(path.c_str(), O_RDONLY, 0);
+  if (fd < 0) {
+    return false;
+  }
+  SCOPE_EXIT
+  {
+    ::close(fd);
+  };
+
+  elf = elf_begin(fd, ELF_C_READ_MMAP, nullptr);
+  if (elf == nullptr) {
+    return false;
+  }
+  SCOPE_EXIT
+  {
+    ::elf_end(elf);
+  };
+
+  if (elf_kind(elf) != ELF_K_ELF) {
+    return false;
+  }
+
+  elf_getshdrnum(elf, &shdrnum);
+  for (i = 0; i < shdrnum; i++) {
+    Elf_Scn *scn = elf_getscn(elf, i);
+    GElf_Shdr *shdr = elf64_getshdr(scn);
+    Elf_Data *data = elf_getdata(scn, nullptr);
+
+    if (!shdr || shdr->sh_type != SHT_DYNAMIC)
+      continue;
+
+    GElf_Dyn *dyns = static_cast<GElf_Dyn *>(data->d_buf);
+    for (j = 0; j * shdr->sh_entsize < shdr->sh_size; j++) {
+      auto *dyn = &dyns[j];
+      if (dyn->d_tag == DT_FLAGS_1) {
+        if (dyn->d_un.d_val & DF_1_PIE) {
+          res = true;
+          goto done;
+        }
+      }
+    }
+  }
+
+done:
+  return res;
 }
 
 std::optional<std::string> abs_path(const std::string &rel_path)
