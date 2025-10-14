@@ -248,6 +248,29 @@ kprobe:dummy {
 ktime_get_ns - ktime_get_boot_ns
 
 
+### elf_ino
+- `uint64 elf_ino`
+
+Return the inode number of the ELF file in the probe, which helps use the probe ELF's inode number in a bpftrace script.
+
+Probe types: u(ret)probe, USDT
+
+```
+uprobe:/bin/bash:readline { @ = elf_ino; exit(); }
+Attached 1 probe
+
+@: 17826849
+```
+
+
+### elf_is_exe
+- `bool elf_is_exe`
+
+Check whether the ELF file in the probe is ET_EXEC. In addition, the ELF passed into the probe may also be PIE (Position Independent Executables) or a dynamic library.
+
+Probe types: u(ret)probe, USDT
+
+
 ### errorf
 - `void errorf(const string fmt, args...)`
 
