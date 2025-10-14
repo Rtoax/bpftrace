@@ -1117,8 +1117,6 @@ macro retval() {
 // * uretprobes
 // * USDT
 //
-// ***Does not work with ASLR, see issue [#75](https://github.com/bpftrace/bpftrace/issues/75)***
-//
 // The `uaddr` function returns the address of the specified symbol.
 // This lookup happens during program compilation and cannot be used dynamically.
 //
@@ -1132,7 +1130,16 @@ macro retval() {
 // }
 // ```
 macro uaddr(sym) {
-  elfaddr(sym)
+  let $addr = (int64)elfaddr(sym);
+
+  // There are three types of ELF that use uprobe: PIE, EXEC, and dynamic
+  // libraries. Among them, PIE and dynamic libraries need to correct the
+  // symbol address according to the actual load address.
+  if (!__builtin_elf_is_exe) {
+    $bias = __bpf_task_map_file_min_addr((int64)__builtin_elf_ino);
+    $addr += $bias;
+  }
+  $addr
 }
 
 // :variant uint64 uid()
