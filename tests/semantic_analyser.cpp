@@ -292,6 +292,7 @@ TEST_F(SemanticAnalyserTest, builtin_functions)
   test("kprobe:f { ustack(1) }");
   test("kprobe:f { cat(\"/proc/uptime\") }");
   test("uprobe:/bin/sh:main { uaddr(\"glob_asciirange\") }");
+  test("uprobe:/bin/sh:main { __builtin_uaddr(\"glob_asciirange\") }");
   test("kprobe:f { cgroupid(\"/sys/fs/cgroup/unified/mycg\"); }");
   test("kprobe:f { macaddr(0xffff) }");
   test("kprobe:f { nsecs() }");
@@ -1431,7 +1432,9 @@ TEST_F(SemanticAnalyserTest, call_uaddr)
        Error{});
 
   test("k:f { uaddr(\"A\"); }", Error{});
+  test("k:f { __builtin_uaddr(\"A\"); }", Error{});
   test("i:s:1 { uaddr(\"A\"); }", Error{});
+  test("i:s:1 { __builtin_uaddr(\"A\"); }", Error{});
 
   // The C struct parser should set the
   // is_signed flag on signed types
