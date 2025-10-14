@@ -62,6 +62,7 @@
 #include "util/cgroup.h"
 #include "util/cpus.h"
 #include "util/exceptions.h"
+#include "util/paths.h"
 
 namespace bpftrace::ast {
 
@@ -805,6 +806,14 @@ ScopedExpr CodegenLLVM::visit(Builtin &builtin)
     }
     return ScopedExpr(value);
 
+  } else if (builtin.ident == "__builtin_elf_is_pie") {
+    return ScopedExpr(
+        b_.getInt64(util::is_elf_pie(current_attach_point_->target)));
+  } else if (builtin.ident == "__builtin_elf_is_exe") {
+    return ScopedExpr(b_.getInt64(util::is_exe(current_attach_point_->target)));
+  } else if (builtin.ident == "__builtin_elf_ino") {
+    return ScopedExpr(
+        b_.getInt64(util::file_ino(current_attach_point_->target)));
   } else if (builtin.ident == "args" &&
              probetype(current_attach_point_->provider) == ProbeType::uprobe) {
     // uprobe args record is built on stack

@@ -981,6 +981,23 @@ void SemanticAnalyser::visit(Builtin &builtin)
     // For kretprobe, fentry, fexit -> AddrSpace::kernel
     // For uretprobe -> AddrSpace::user
     builtin.builtin_type.SetAS(find_addrspace(type));
+  } else if (builtin.ident == "__builtin_elf_is_pie" ||
+             builtin.ident == "__builtin_elf_is_exe" ||
+             builtin.ident == "__builtin_elf_ino") {
+    auto *probe = get_probe(builtin, builtin.ident);
+    if (probe == nullptr)
+      return;
+    for (auto *attach_point : probe->attach_points) {
+      ProbeType type = probetype(attach_point->provider);
+      // Only for uprobe,uretprobe,USDT.
+      if (type != ProbeType::uprobe && type != ProbeType::uretprobe &&
+          type != ProbeType::usdt) {
+        builtin.addError() << "The " << builtin.ident
+                           << " can not be used with '"
+                           << attach_point->provider << "' probes";
+      }
+    }
+    builtin.builtin_type = CreateUInt64();
   } else if (builtin.ident == "kstack") {
     builtin.builtin_type = CreateStack(
         true, StackType{ .mode = bpftrace_.config_->stack_mode });
