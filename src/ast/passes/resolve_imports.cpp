@@ -313,10 +313,12 @@ void ResolveImports::visit(Import &imp)
   }
 }
 
-Pass CreateResolveImportsPass(std::vector<std::string> &&import_paths)
+Pass CreateResolveImportsPass(std::vector<std::string> &&import_paths,
+                              bool disable_stdlib)
 {
   return Pass::create("ResolveImports",
-                      [import_paths](ASTContext &ast) -> Result<Imports> {
+                      [import_paths,
+                       disable_stdlib](ASTContext &ast) -> Result<Imports> {
                         Imports imports;
 
                         // Add the source location as a primary path.
@@ -338,9 +340,11 @@ Pass CreateResolveImportsPass(std::vector<std::string> &&import_paths)
                         // implicit import is only permitted from the embedded
                         // standard library.  Overriding this is possible, but
                         // it must be explicitly imported.
-                        auto ok = imports.import_any(*ast.root, "stdlib");
-                        if (!ok) {
-                          return ok.takeError();
+                        if (!disable_stdlib) {
+                          auto ok = imports.import_any(*ast.root, "stdlib");
+                          if (!ok) {
+                            return ok.takeError();
+                          }
                         }
 
                         // Return all calculated imports.

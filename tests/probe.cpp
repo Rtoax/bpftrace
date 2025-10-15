@@ -24,7 +24,9 @@ using bpftrace::ast::AttachPoint;
 using bpftrace::ast::AttachPointList;
 using bpftrace::ast::Probe;
 
-void gen_bytecode(const std::string &input, std::stringstream &out)
+void gen_bytecode(const std::string &input,
+                  std::stringstream &out,
+                  bool disable_stdlib = false)
 {
   auto bpftrace = get_mock_bpftrace();
   ast::ASTContext ast("stdin", input);
@@ -37,7 +39,7 @@ void gen_bytecode(const std::string &input, std::stringstream &out)
                 .put<BPFtrace>(*bpftrace)
                 .put(no_c_defs)
                 .add(CreateParsePass())
-                .add(ast::CreateResolveImportsPass())
+                .add(ast::CreateResolveImportsPass({}, disable_stdlib))
                 .add(ast::CreateParseAttachpointsPass())
                 .add(ast::CreateControlFlowPass())
                 .add(ast::CreateApExpansionPass())
@@ -58,13 +60,15 @@ void gen_bytecode(const std::string &input, std::stringstream &out)
   out.write(obj.data.data(), obj.data.size());
 }
 
-void compare_bytecode(const std::string &input1, const std::string &input2)
+void compare_bytecode(const std::string &input1,
+                      const std::string &input2,
+                      bool disable_stdlib = false)
 {
   std::stringstream expected_output1;
   std::stringstream expected_output2;
 
-  gen_bytecode(input1, expected_output1);
-  gen_bytecode(input2, expected_output2);
+  gen_bytecode(input1, expected_output1, disable_stdlib);
+  gen_bytecode(input2, expected_output2, disable_stdlib);
 
   EXPECT_EQ(expected_output1.str(), expected_output2.str());
 }
@@ -93,13 +97,17 @@ TEST(probe, case_insensitive)
 
 class probe_btf : public test_btf {};
 
+/**
+ * FIXME: Because some stdlib's bpf.c file is conflicting with the custom BTF
+ * we generate for the test, just disable stdlib for this test right now.
+ */
 TEST_F(probe_btf, short_name)
 {
-  compare_bytecode("fentry:func_1 { 1 }", "f:func_1 { 1 }");
-  compare_bytecode("fexit:func_1 { 1 }", "fr:func_1 { 1 }");
-  compare_bytecode("iter:task { 1 }", "it:task { 1 }");
-  compare_bytecode("iter:task_file { 1 }", "it:task_file { 1 }");
-  compare_bytecode("iter:task_vma { 1 }", "it:task_vma { 1 }");
+  compare_bytecode("fentry:func_1 { 1 }", "f:func_1 { 1 }", true);
+  compare_bytecode("fexit:func_1 { 1 }", "fr:func_1 { 1 }", true);
+  compare_bytecode("iter:task { 1 }", "it:task { 1 }", true);
+  compare_bytecode("iter:task_file { 1 }", "it:task_file { 1 }", true);
+  compare_bytecode("iter:task_vma { 1 }", "it:task_vma { 1 }", true);
 }
 
 } // namespace bpftrace::test::probe
