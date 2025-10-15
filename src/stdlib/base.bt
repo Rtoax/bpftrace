@@ -1109,7 +1109,16 @@ macro retval() {
 // bpftrace uses the `strftime(3)` function for formatting time and supports the same format specifiers.
 
 macro uaddr(sym) {
-  __builtin_uaddr(sym)
+  let $addr = __builtin_uaddr(sym);
+
+  // There are three types of ELF that use uprobe: PIE, EXEC, and dynamic
+  // libraries. Among them, PIE and dynamic libraries need to correct the
+  // symbol address according to the actual load address.
+  if (!elf_is_exe) {
+    $offset = __bpf_task_map_file_min_addr((int64)elf_ino);
+    $addr += $offset;
+  }
+  $addr
 }
 
 // :variant uint64 uid()
