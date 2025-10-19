@@ -681,6 +681,14 @@ If `size` is smaller than the resolved path, the resulting string will be trunca
 This function can only be used by functions that are allowed to, these functions are contained in the `btf_allowlist_d_path` set in the kernel.
 
 
+### pcomm
+- `string pcomm()`
+- `string pcomm`
+- `string pcomm(struct task_struct * task)`
+
+Get the name of the parent process
+
+
 ### percpu_kaddr
 - `uint64 *percpu_kaddr(const string name)`
 - `uint64 *percpu_kaddr(const string name, int cpu)`
@@ -724,6 +732,8 @@ Defaults to `curr_ns`.
 
 
 ### ppid
+- `uint32 ppid()`
+- `uint32 ppid`
 - `uint32 ppid(struct task_struct * task)`
 
 Get the pid of the parent process
