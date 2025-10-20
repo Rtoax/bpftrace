@@ -3,6 +3,8 @@
  * syscount.bt	Count system calls.
  *		For Linux, uses bpftrace, eBPF.
  * 
+ * USAGE: syscount.bt -- [--sysname]
+ *
  * Example of usage:
  * 
  * # ./syscount.bt
@@ -55,15 +57,29 @@ BEGIN
 
 tracepoint:raw_syscalls:sys_enter
 {
-	@syscall[args.id] = count();
+	$sysname = getopt("sysname");
+
+	if ($sysname) {
+		@syscallname[strsyscall(args.id)] = count();
+	} else {
+		@syscall[args.id] = count();
+	}
 	@process[comm] = count();
 }
 
 END
 {
-	printf("\nTop 10 syscalls IDs:\n");
-	print(@syscall, 10);
-	clear(@syscall);
+	$sysname = getopt("sysname");
+
+	if ($sysname) {
+		printf("\nTop 10 syscalls IDs:\n");
+		print(@syscall, 10);
+		clear(@syscall);
+	} else {
+		printf("\nTop 10 syscalls NAMEs:\n");
+		print(@syscallname, 10);
+		clear(@syscallname);
+	}
 
 	printf("\nTop 10 processes:\n");
 	print(@process, 10);
