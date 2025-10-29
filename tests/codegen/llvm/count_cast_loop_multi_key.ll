@@ -4,13 +4,13 @@ target datalayout = "e-m:e-p:64:64-i64:64-i128:128-n32:64-S128"
 target triple = "bpf"
 
 %"struct map_internal_repr_t" = type { ptr, ptr, ptr, ptr }
-%"struct map_internal_repr_t.163" = type { ptr, ptr }
+%"struct map_internal_repr_t.616" = type { ptr, ptr }
 %int64_int64__tuple_t = type { i64, i64 }
 %"(int64,int64)_count_t__tuple_t" = type { %int64_int64__tuple_t, i64 }
 
 @LICENSE = global [4 x i8] c"GPL\00", section "license", !dbg !0
 @AT_x = dso_local global %"struct map_internal_repr_t" zeroinitializer, section ".maps", !dbg !7
-@ringbuf = dso_local global %"struct map_internal_repr_t.163" zeroinitializer, section ".maps", !dbg !31
+@ringbuf = dso_local global %"struct map_internal_repr_t.616" zeroinitializer, section ".maps", !dbg !31
 @__bt__max_cpu_id = dso_local externally_initialized constant i64 0, section ".rodata", !dbg !45
 @__bt__event_loss_counter = dso_local externally_initialized global [1 x [1 x i64]] zeroinitializer, section ".data.event_loss_counter", !dbg !47
 @__bt__num_cpus = dso_local externally_initialized constant i64 0, section ".rodata", !dbg !53
@@ -51,7 +51,7 @@ lookup_failure:                                   ; preds = %entry
 lookup_merge:                                     ; preds = %lookup_failure, %lookup_success
   call void @llvm.lifetime.end.p0(i64 -1, ptr %lookup_elem_val)
   call void @llvm.lifetime.end.p0(i64 -1, ptr %tuple)
-  %for_each_map_elem = call i64 inttoptr (i64 164 to ptr)(ptr @AT_x, ptr @map_for_each_cb, ptr null, i64 0)
+  %for_each_map_elem = call i64 inttoptr (i64 617 to ptr)(ptr @AT_x, ptr @map_for_each_cb, ptr null, i64 0)
   ret i64 0
 }
 

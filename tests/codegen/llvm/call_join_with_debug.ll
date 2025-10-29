@@ -4,12 +4,12 @@ target datalayout = "e-m:e-p:64:64-i64:64-i128:128-n32:64-S128"
 target triple = "bpf"
 
 %"struct map_internal_repr_t" = type { ptr, ptr, ptr, ptr }
-%"struct map_internal_repr_t.163" = type { ptr, ptr }
-%join_t = type <{ i64, i64, [16384 x i8] }>
+%"struct map_internal_repr_t.616" = type { ptr, ptr }
+%join_t = type <{ i64, i64, [66214 x i8] }>
 
 @LICENSE = global [4 x i8] c"GPL\00", section "license", !dbg !0
 @join = dso_local global %"struct map_internal_repr_t" zeroinitializer, section ".maps", !dbg !7
-@ringbuf = dso_local global %"struct map_internal_repr_t.163" zeroinitializer, section ".maps", !dbg !30
+@ringbuf = dso_local global %"struct map_internal_repr_t.616" zeroinitializer, section ".maps", !dbg !30
 @__bt__event_loss_counter = dso_local externally_initialized global [1 x [1 x i64]] zeroinitializer, section ".data.event_loss_counter", !dbg !44
 @__bt__max_cpu_id = dso_local externally_initialized constant i64 0, section ".rodata", !dbg !49
 
@@ -94,7 +94,7 @@ lookup_join_merge:                                ; preds = %entry
   %probe_read_kernel_str13 = call i64 inttoptr (i64 115 to ptr)(ptr %26, i32 1024, i64 %27)
   %28 = getelementptr ptr, ptr %25, i32 1
   %probe_read_kernel14 = call i64 inttoptr (i64 113 to ptr)(ptr %join_r0, i32 8, ptr %28)
-  %29 = getelementptr i8, ptr %7, i64 7168
+  %29 = getelementptr i8, ptr %7, i64 7621
   %30 = load i64, ptr %join_r0, align 8
   %probe_read_kernel_str15 = call i64 inttoptr (i64 115 to ptr)(ptr %29, i32 1024, i64 %30)
   %31 = getelementptr ptr, ptr %28, i32 1
@@ -137,7 +137,7 @@ lookup_join_merge:                                ; preds = %entry
   %53 = getelementptr i8, ptr %7, i64 15360
   %54 = load i64, ptr %join_r0, align 8
   %probe_read_kernel_str31 = call i64 inttoptr (i64 115 to ptr)(ptr %53, i32 1024, i64 %54)
-  %ringbuf_output = call i64 inttoptr (i64 130 to ptr)(ptr @ringbuf, ptr %lookup_join_map, i64 16400, i64 0)
+  %ringbuf_output = call i64 inttoptr (i64 130 to ptr)(ptr @ringbuf, ptr %lookup_join_map, i64 66230, i64 0)
   %ringbuf_loss = icmp slt i64 %ringbuf_output, 0
   br i1 %ringbuf_loss, label %event_loss_counter, label %counter_merge
 
@@ -205,7 +205,7 @@ attributes #4 = { memory(none) }
 !26 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !27, size: 64)
 !27 = !DICompositeType(tag: DW_TAG_array_type, baseType: !4, size: 131200, elements: !28)
 !28 = !{!29}
-!29 = !DISubrange(count: 16400, lowerBound: 0)
+!29 = !DISubrange(count: 66230, lowerBound: 0)
 !30 = !DIGlobalVariableExpression(var: !31, expr: !DIExpression())
 !31 = distinct !DIGlobalVariable(name: "ringbuf", linkageName: "global", scope: !2, file: !2, type: !32, isLocal: false, isDefinition: true)
 !32 = !DICompositeType(tag: DW_TAG_structure_type, scope: !2, file: !2, size: 128, elements: !33)
