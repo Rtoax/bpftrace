@@ -2,6 +2,10 @@
 #include "strings.h"
 #include <linux/types.h>
 
+// A constant whose low-order bits are all 1 and is greater than the maximum
+// error number (EHWPOISON=133 is the biggest now).
+#define NR_ERROR_ALIGN_BITS 0xff
+
 static m_str errors[] = {
   [0] = "Success",
   [EPERM] = "Operation not permitted",
@@ -135,6 +139,7 @@ static m_str errors[] = {
   [ENOTRECOVERABLE] = "State not recoverable",
   [ERFKILL] = "Operation not possible due to RF-kill",
   [EHWPOISON] = "Memory page has hardware error",
+  [NR_ERROR_ALIGN_BITS] = "",
 };
 
 static m_str unknown_error = "Unknown error";

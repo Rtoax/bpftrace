@@ -73,6 +73,8 @@ m_str* __strerror(int errno, m_arg *out) {
     errno = -errno;
   }
   if (errno >= 0 && errno <= EHWPOISON) {
+    // Same as NR_SYSCALL_ALIGN_BITS in __syscall_name().
+    errno &= NR_ERROR_ALIGN_BITS;
     result = &errors[errno];
   } else {
     result = &unknown_error;
