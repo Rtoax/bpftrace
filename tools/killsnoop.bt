@@ -8,11 +8,13 @@
  * # ./killsnoop.bt
  * Attached 8 probes
  * Tracing kill(),tkill(),tgkill() signals... Hit Ctrl-C to end.
- * TIME                 PID COMM                    SIG     TPID RESULT
- * 16:51:52.961181   589458 bash                 SIGINT   589458      0
- * 16:51:55.177019   589458 bash                 SIGINT   234567     -3
- * 16:51:57.061029   589458 bash                SIGTERM    23456     -3
- * 16:52:02.717378   589458 bash                SIGTERM        1     -1
+ * TIME                 PID COMM                    SIG     TPID TCOMM            RESULT
+ * 18:59:52.895146     4588 bash                SIGCHLD        1 systemd              -1
+ * 18:59:55.663640     4588 bash                SIGCHLD        2 kthreadd             -1
+ * 18:59:56.535414     4588 bash                SIGCHLD        3 pool_workqueue_      -1
+ * 18:59:58.131789     4588 bash                SIGCHLD        4 kworker/R-rcu_g      -1
+ * 18:59:59.008390     4588 bash                SIGCHLD        5 kworker/R-sync_      -1
+ * 19:00:02.384245     4588 bash                SIGCHLD        6 kworker/R-kvfre      -1
  *
  * The first line showed a SIGINT sent from PID 589458 (a bash shell) to
  * PID 589458. The result, 0, means success. The next line shows the same signal
@@ -72,8 +74,8 @@ BEGIN
 	 */
 
 	printf("Tracing kill(),tkill(),tgkill() signals... Hit Ctrl-C to end.\n");
-	printf("%-15s %8s %-16s %10s %8s %s\n",
-		"TIME", "PID", "COMM", "SIG", "TPID", "RESULT");
+	printf("%-15s %8s %-16s %10s %8s %-16s %s\n",
+		"TIME", "PID", "COMM", "SIG", "TPID", "TCOMM", "RESULT");
 }
 
 tracepoint:syscalls:sys_enter_kill,
@@ -95,7 +97,7 @@ tracepoint:syscalls:sys_exit_tgkill
 	} else {
 		printf(" %10s", @SIG_STR[@tsig[tid]]);
 	}
-	printf(" %8d %6d\n", @tpid[tid], args.ret);
+	printf(" %8d %-16s %6d\n", @tpid[tid], comm(@tpid[tid]), args.ret);
 	delete(@tpid, tid);
 	delete(@tsig, tid);
 }

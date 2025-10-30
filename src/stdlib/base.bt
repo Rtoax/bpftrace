@@ -131,11 +131,31 @@ macro cgroup() {
 // ```
 
 // :variant string comm()
-// Name of the current thread
+// :variant string comm(uint32 pid)
+// Name of the current thread or the process with the specified PID
 //
 // This utilizes the BPF helper `get_current_comm`
 macro comm() {
   __builtin_comm
+}
+
+macro comm($pid) {
+    let $name = "[Unknown]";
+    if comptime is_integer($pid) {
+        let $task = (struct task_struct *)__task_from_pid((int32)$pid);
+        if ($task) {
+            $name = $task->comm;
+            __task_release((void *)$task);
+        }
+    } else {
+        static_assert(false, "Only integer supported for comm()'s pid");
+    }
+    $name
+}
+
+macro comm(arg_pid) {
+    let $pid = arg_pid;
+    comm($pid)
 }
 
 // :variant uint32 cpid()
