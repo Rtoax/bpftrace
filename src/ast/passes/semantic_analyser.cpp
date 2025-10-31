@@ -1099,6 +1099,8 @@ void SemanticAnalyser::visit(Builtin &builtin)
 
 void SemanticAnalyser::visit(Call &call)
 {
+  std::cout << "SemanticAnalyser::visit(Call " << call.func << ");" << std::endl;
+
   // Check for unsafe-ness first. It is likely the most pertinent issue
   // (and should be at the top) for any function call.
   if (bpftrace_.safe_mode_ && is_unsafe_func(call.func)) {

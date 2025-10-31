@@ -249,6 +249,7 @@ void MacroExpander::visit(Expression &expr)
     }
   }
   if (call) {
+    std::cout << "MacroExpander::visit(Expression " << call->func << ");" << std::endl;
     visit(call->vargs);
   }
 

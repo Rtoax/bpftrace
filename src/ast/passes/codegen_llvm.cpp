@@ -823,6 +823,8 @@ ScopedExpr CodegenLLVM::visit(Builtin &builtin)
 
 ScopedExpr CodegenLLVM::visit(Call &call)
 {
+  std::cout << "CodegenLLVM::visit(Call " << call.func << ");"<< std::endl;
+
   if (call.func == "count") {
     Map &map = *call.vargs.at(0).as<Map>();
     auto scoped_key = getMapKey(map, call.vargs.at(1));

@@ -295,6 +295,7 @@ void event_printer(void *cb_cookie, void *raw_data, int size)
     return;
   } else if (printf_id >= async_action::AsyncAction::printf &&
              printf_id <= async_action::AsyncAction::printf_end) {
+    printf("event_printer: printf_id %d\n", printf_id);
     ctx->handlers.printf(data);
     return;
   } else {

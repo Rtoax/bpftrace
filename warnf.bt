@@ -1,0 +1,34 @@
+#!/bin/env bpftrace
+
+macro name() {
+    //system("ls");
+    //cat("/etc/os-release");
+    //printf("");
+    warnf("warnf");
+    errorf("warnf");
+    //debugf("debugf");
+    "rongtao"
+}
+
+macro P() {
+    warnf("a");
+    errorf("b");
+}
+
+BEGIN {
+/*
+    P();
+    printf("c");
+    P();
+*/
+    printf("%s\n", name);
+    printf("%s\n", name);
+/*
+    warnf("%s\n", name);
+    printf("%s\n", name);
+    printf("%s\n", name);
+    for ($i : ((uint64)0)..((uint64)3)) {
+        printf("%s\n", name);
+    }
+*/
+}

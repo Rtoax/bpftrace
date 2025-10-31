@@ -329,6 +329,7 @@ struct Args {
 
 void CreateDynamicPasses(std::function<void(ast::Pass&& pass)> add)
 {
+  std::cout << "CreateDynamicPasses" << std::endl;
   add(ast::CreateFoldLiteralsPass());
   add(ast::CreateClangBuildPass());
   add(ast::CreateTypeSystemPass());
@@ -339,6 +340,7 @@ void CreateDynamicPasses(std::function<void(ast::Pass&& pass)> add)
 
 void CreateAotPasses(std::function<void(ast::Pass&& pass)> add)
 {
+  std::cout << "CreateAotPasses" << std::endl;
   add(ast::CreatePortabilityPass());
   add(ast::CreateFoldLiteralsPass());
   add(ast::CreateClangBuildPass());

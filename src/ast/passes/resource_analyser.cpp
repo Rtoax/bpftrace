@@ -154,7 +154,7 @@ void ResourceAnalyser::visit(Builtin &builtin)
 
 void ResourceAnalyser::visit(Call &call)
 {
-  Visitor<ResourceAnalyser>::visit(call);
+  std::cout << "ResourceAnalyser::visit(Call " << call.func << ");" << std::endl;
 
   if (call.func == "printf" || call.func == "errorf" || call.func == "warnf" ||
       call.func == "system" || call.func == "cat" || call.func == "debugf") {
@@ -379,6 +379,8 @@ void ResourceAnalyser::visit(Call &call)
     // and symbols resolved even when unavailable at resolution time
     resources_.probes_using_usym.insert(probe_);
   }
+
+  Visitor<ResourceAnalyser>::visit(call);
 }
 
 void ResourceAnalyser::visit(MapDeclStatement &decl)
@@ -577,11 +579,13 @@ void ResourceAnalyser::maybe_allocate_map_key_buffer(const Map &map,
 
 Pass CreateResourcePass()
 {
+  std::cout << "CreateResourcePass();" << std::endl;
   auto fn = [](ASTContext &ast,
                BPFtrace &b,
                MapMetadata &mm,
                NamedParamDefaults &named_param_defaults) {
     ResourceAnalyser analyser(b, mm, named_param_defaults);
+    std::cout << "CreateResourcePass: ast.root = " << ast.root << std::endl;
     analyser.visit(ast.root);
     b.resources = analyser.resources();
   };

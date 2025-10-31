@@ -27,6 +27,8 @@ void CodegenResourceAnalyser::visit(Builtin &builtin)
 
 void CodegenResourceAnalyser::visit(Call &call)
 {
+  std::cout << "CodegenResourceAnalyser::visit(Call " << call.func << ");" << std::endl;
+
   Visitor::visit(call);
 
   if (call.func == "join") {

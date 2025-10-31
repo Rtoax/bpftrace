@@ -270,6 +270,7 @@ void AsyncHandlers::printf(const OpaqueValue &data)
 {
   auto id = data.bitcast<uint64_t>() -
             static_cast<uint64_t>(AsyncAction::printf);
+  std::cout << "AsyncHandlers::printf: " << id << std::endl;
   auto &fmt = std::get<0>(bpftrace.resources.printf_args[id]);
   auto &args = std::get<1>(bpftrace.resources.printf_args[id]);
   auto severity = std::get<2>(bpftrace.resources.printf_args[id]);
