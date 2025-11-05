@@ -1,0 +1,55 @@
+#!/bin/env bpftrace
+
+macro str_append($dst, $src) {
+  assert_str($dst);
+  assert_str($src);
+  let $dst_size = strcap($dst);
+  let $src_size = strcap($src);
+  if ($src_size > 0) {
+    __bpf_str_append((int8 *)&$dst, (uint64)$dst_size, (int8 *)&$src,
+                     (uint64)$src_size);
+  }
+}
+
+macro str_append($dst, src) {
+  let $src = src;
+  str_append($dst, $src);
+}
+
+macro str_append(dst, $src) {
+  let $dst = dst;
+  str_append($dst, $src);
+}
+
+macro str_append(dst, src) {
+  let $dst = dst;
+  let $src = src;
+  str_append($dst, $src);
+}
+
+macro str_prepend($dst, $src) {
+  assert_str($dst);
+  assert_str($src);
+  let $dst_size = strcap($dst);
+  let $src_size = strcap($src);
+  if ($src_size > 0) {
+    __bpf_str_prepend((int8 *)&$dst, (uint64)$dst_size, (int8 *)&$src,
+                      (uint64)$src_size);
+  }
+}
+
+macro str_prepend($dst, src) {
+  let $src = src;
+  str_prepend($dst, $src);
+}
+
+macro str_prepend(dst, $src) {
+  let $dst = dst;
+  str_prepend($dst, $src);
+}
+
+macro str_prepend(dst, src) {
+  let $dst = dst;
+  let $src = src;
+  str_prepend($dst, $src);
+}
