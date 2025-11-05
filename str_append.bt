@@ -1,0 +1,93 @@
+#!/bin/env bpftrace
+/**
+ * see https://github.com/Rtoax/bpftrace/commit/95bf746af7501df777e02919eef39b1033e4c0f1
+ * see https://github.com/bpftrace/bpftrace/pull/4601
+
+This is great, and it's amazing to see you're using features on the bleeding edge ;)
+
+Did you want to instead add some of this functionality to the standard library, e.g. paths.bt and strings.bt?
+
+Thinking out loud, there are a few composable functions I can see:
+
+- fs_root
+- str_append (appends another string or const char* to an existing string variable, rather straight forward with C interop)
+- str_prepend (similar, but prepends)
+- abspath (takes a string-like variable, and converts to an absolute path... could use the above or do it its own way)
+Then the ideal API for this script would just be: print(abspath(args.filename))
+
+Anyways, so many exciting opportunities with macros & C for the stdlib, also it avoids the need to declare things unstable (but the functions should probably note something about subject to change?)
+
+ */
+
+macro fs_root() {
+  curtask->fs
+}
+
+macro str_append($dst, $src) {
+  assert_str($dst);
+  assert_str($src);
+  let $dst_size = strcap($dst);
+  let $src_size = strcap($src);
+  if ($src_size > 0) {
+    __bpf_str_append((int8 *)&$dst, (uint64)$dst_size, (int8 *)&$src,
+                     (uint64)$src_size);
+    //__bpf_str_prepend((int8 *)&$dst, (uint64)$dst_size, (int8 *)&$src, (uint64)$src_size);
+  }
+}
+
+macro str_append($dst, src) {
+  let $src = src;
+  str_append($dst, $src);
+}
+
+macro str_append(dst, $src) {
+  let $dst = dst;
+  str_append($dst, $src);
+}
+
+macro str_append(dst, src) {
+  let $dst = dst;
+  let $src = src;
+  str_append($dst, $src);
+}
+
+macro str_prepend($dst, $src) {
+  assert_str($dst);
+  assert_str($src);
+  let $dst_size = strcap($dst);
+  let $src_size = strcap($src);
+  if ($src_size > 0) {
+    __bpf_str_prepend((int8 *)&$dst, (uint64)$dst_size, (int8 *)&$src,
+                      (uint64)$src_size);
+  }
+}
+
+macro str_prepend($dst, src) {
+  let $src = src;
+  str_prepend($dst, $src);
+}
+
+macro str_prepend(dst, $src) {
+  let $dst = dst;
+  str_prepend($dst, $src);
+}
+
+macro str_prepend(dst, src) {
+  let $dst = dst;
+  let $src = src;
+  str_prepend($dst, $src);
+}
+
+BEGIN
+{
+  let $dst : string[256];
+  $dst = "abc";
+  let $src = "b";
+
+  printf("%s %d\n", $dst, strcap($dst));
+  str_append($dst, "/");
+  str_append($dst, $src);
+  str_prepend($dst, "/home/rongtao/");
+  printf("%s\n", $dst);
+  printf("%s\n", $src);
+}
