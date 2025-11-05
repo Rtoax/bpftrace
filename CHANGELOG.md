@@ -10,6 +10,8 @@ and this project adheres to
 
 #### Breaking Changes
 #### Added
+- stdlib: add `abspath()` get file absolute path
+  - [#]()
 - Publish arm64/aarch64 release artifacts alongside x86_64.
   - [#5213](https://github.com/bpftrace/bpftrace/pull/5213)
 - Add support for type expression substitution for macros

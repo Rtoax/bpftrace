@@ -76,3 +76,7 @@ PROG struct Foo { int m; int n; } u:./testprogs/simple_struct:n_func { $n = (int
 EXPECT { .m = 2, .n = 3 }
 TIMEOUT 4
 AFTER ./testprogs/simple_struct
+
+NAME abspath
+RUN mkdir -p /root/tmpdir-xyz/; pushd /root/tmpdir-xyz/; {{BPFTRACE}} -e 'begin { let $cwd : string[256]; abspath($cwd, 32); printf("%s\n", $cwd); }'; popd; rmdir /root/tmpdir-xyz/
+EXPECT /root/tmpdir-xyz/

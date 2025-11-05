@@ -13,6 +13,22 @@ Basically all functions or macros that don't have arguments or have default argu
 
 ## Helpers
 
+### abspath
+- `void abspath(string path, uint64 max_path_depth);`
+
+Takes a string-like variable, and converts to an absolute path.
+
+
+In fact, this function concatenates the program's current working directory and the filename to form the absolute path of the file. If an empty string is passed in, the current working directory can be obtained.
+
+For example:
+```
+let $cwd : string[256];
+abspath($cwd, 32);
+printf("%s\n", $cwd);
+```
+
+
 ### assert
 - `void assert(bool condition, string message)`
 
@@ -358,6 +374,14 @@ kprobe:dummy {
   }
 }
 ```
+
+
+### fs_root
+- `struct fs_struct *fs_root();`
+- `struct fs_struct *fs_root;`
+
+Get task filesystem root.
+
 
 
 ### func
