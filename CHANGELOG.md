@@ -10,6 +10,10 @@ and this project adheres to
 
 #### Breaking Changes
 #### Added
+- stdlib: add `abspath()` get file absolute path
+  - [#5231](https://github.com/bpftrace/bpftrace/pull/5231)
+- stdlib: add `str_{append,prepend}` function
+  - [#5231](https://github.com/bpftrace/bpftrace/pull/5231)
 - Publish arm64/aarch64 release artifacts alongside x86_64.
   - [#5213](https://github.com/bpftrace/bpftrace/pull/5213)
 - Add support for type expression substitution for macros
