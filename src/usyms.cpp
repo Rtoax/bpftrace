@@ -227,6 +227,13 @@ void Usyms::cache(const std::string &elf_file, std::optional<int> pid)
   cache_bcc(elf_file, pid);
 }
 
+#if 0
+#define DEBUG()	\
+	std::cout << __func__ << ": " << __LINE__ << std::endl;
+#else
+#define DEBUG()
+#endif
+
 std::string Usyms::resolve_bcc(uint64_t addr,
                                int32_t pid,
                                const std::string &pid_exe,
@@ -238,8 +245,11 @@ std::string Usyms::resolve_bcc(uint64_t addr,
   std::ostringstream symbol;
   void *psyms = nullptr;
 
+  std::cout << "Usyms::resolve_bcc " << addr << ", pid " << pid << ", exe " << pid_exe << std::endl;
   if (cache_type == UserSymbolCacheType::per_program) {
+    DEBUG();
     if (!pid_exe.empty()) {
+      DEBUG();
       // try to resolve symbol directly from program file
       // this might work when the process does not exist anymore, but cannot
       // resolve all symbols, e.g. those in a dynamically linked library
@@ -262,28 +272,34 @@ std::string Usyms::resolve_bcc(uint64_t addr,
         return symbol.str();
       }
     }
+    DEBUG();
     if (!exe_sym_.contains(pid_exe)) {
       // not cached, create new ProcSyms cache
       psyms = bcc_symcache_new(pid, &get_symbol_opts());
       exe_sym_[pid_exe] = std::make_pair(pid, psyms);
     } else {
+      DEBUG();
       psyms = exe_sym_[pid_exe].second;
     }
   } else if (cache_type == UserSymbolCacheType::per_pid) {
+    DEBUG();
     // cache user symbols per pid
     if (!pid_sym_.contains(pid)) {
       // not cached, create new ProcSyms cache
       psyms = bcc_symcache_new(pid, &get_symbol_opts());
       pid_sym_[pid] = psyms;
     } else {
+      DEBUG();
       psyms = pid_sym_[pid];
     }
   } else {
+    DEBUG();
     // no user symbol caching, create new bcc cache
     psyms = bcc_symcache_new(pid, &get_symbol_opts());
   }
 
   if (psyms && bcc_symcache_resolve(psyms, addr, &usym) == 0) {
+    DEBUG();
     SCOPE_EXIT
     {
       // This is a horrible hack to work around the fact that
@@ -297,6 +313,7 @@ std::string Usyms::resolve_bcc(uint64_t addr,
       if (usym.demangle_name != usym.name)
         ::free(const_cast<char *>(usym.demangle_name));
     };
+    DEBUG();
     if (config_.cpp_demangle)
       symbol << usym.demangle_name;
     else
@@ -306,14 +323,17 @@ std::string Usyms::resolve_bcc(uint64_t addr,
     if (perf_mode)
       symbol << " (" << usym.module << ")";
   } else {
+    DEBUG();
     symbol << reinterpret_cast<void *>(addr);
     if (perf_mode)
       symbol << " ([unknown])";
   }
 
+  DEBUG();
   if (cache_type == UserSymbolCacheType::none)
     bcc_free_symcache(psyms, pid);
 
+  DEBUG();
   return symbol.str();
 }
 
@@ -416,9 +436,11 @@ std::vector<std::string> Usyms::resolve(uint64_t addr,
 {
 #ifdef HAVE_BLAZESYM
   if (config_.use_blazesym)
+    std::cout << "Usyms::resolve blazesym " << addr << std::endl;
     return resolve_blazesym(
         addr, pid, pid_exe, show_offset, perf_mode, show_debug_info);
 #endif
+  std::cout << "Usyms::resolve bcc " << addr << ", pid " << pid << ", exe " << pid_exe << std::endl;
   return std::vector<std::string>{
     resolve_bcc(addr, pid, pid_exe, show_offset, perf_mode)
   };
