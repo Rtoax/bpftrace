@@ -41,6 +41,7 @@ public:
   BPFfeature(BPFnofeature& no_feature, BTF& btf)
       : no_feature_(no_feature), btf_(btf)
   {
+    register_all_kfunc_test_insns();
   }
   virtual ~BPFfeature() = default;
 
@@ -72,6 +73,9 @@ public:
   DEFINE_HELPER_TEST(map_lookup_percpu_elem, BPF_PROG_TYPE_KPROBE);
   DEFINE_HELPER_TEST(loop, BPF_PROG_TYPE_KPROBE); // Added in 5.17.
 
+  bool has_kfunc_test_insns(std::string kfunc);
+  bool detect_kfunc(const char* kfunc, enum bpf_prog_type prog_type);
+
 protected:
   std::optional<bool> has_d_path_;
   std::optional<int> insns_limit_;
@@ -97,6 +101,19 @@ private:
                 std::optional<bpf_attach_type> attach_type = std::nullopt,
                 int* outfd = nullptr);
   bool try_load_btf(const void* btf_data, size_t btf_size);
+
+  typedef struct bpf_insn* (
+      BPFfeature::*bpf_insns_fn)(struct bpf_insn* insn_buf, size_t* cnt);
+
+  // This map stores the mapping between all registered kfunc names and the
+  // callback function pointers for obtaining bpf_insns.
+  std::unordered_map<std::string, bpf_insns_fn> kfunc_test_insn_map_;
+  void register_all_kfunc_test_insns(void);
+  bpf_insns_fn get_kfunc_test_insns_fn(std::string& kfunc);
+
+  // Add the kfunc we need here
+  struct bpf_insn* bpf_task_from_pid_insns(struct bpf_insn* insn_buf,
+                                           size_t* cnt);
 
   BPFnofeature no_feature_;
   BTF& btf_;

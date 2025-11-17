@@ -4,6 +4,7 @@
 #include "ast/passes/builtins.h"
 #include "ast/signal_bt.h"
 #include "ast/visitor.h"
+#include "bpffeature.h"
 #include "bpftrace.h"
 #include "log.h"
 #include "util/paths.h"
@@ -104,6 +105,26 @@ std::optional<Expression> Builtins::visit(Call &call)
           call.addError() << "Invalid string for signal: " << str->value;
         }
         return ast_.make_node<Integer>(str->loc, signal_num);
+      }
+    }
+  } else if (call.func == "__builtin_kfunc_avail") {
+    auto *probe = dynamic_cast<Probe *>(top_level_node_);
+    if (!probe) {
+      return std::nullopt;
+    }
+    if (call.vargs.size() != 1) {
+      call.addError() << "__builtin_kfunc_avail expects 1 argument";
+    } else {
+      String *kfunc = call.vargs.at(0).as<String>();
+      if (!bpftrace_.feature_->has_kfunc_test_insns(kfunc->value)) {
+        call.addError() << "__builtin_kfunc_avail not support kfunc "
+                        << kfunc->value << " yet!";
+      } else {
+        ProbeType type = probetype(probe->attach_points.front()->provider);
+        enum bpf_prog_type prog_type = get_bpf_prog_type(type);
+        return ast_.make_node<Boolean>(
+            kfunc->loc,
+            bpftrace_.feature_->detect_kfunc(kfunc->value.c_str(), prog_type));
       }
     }
   }
