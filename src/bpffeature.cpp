@@ -184,6 +184,86 @@ bool BPFfeature::detect_helper(enum bpf_func_id func_id,
          (strstr(buf, "program of this type cannot use helper ") == nullptr);
 }
 
+bool BPFfeature::detect_kfunc(const char* kfunc, enum bpf_prog_type prog_type)
+{
+  char logbuf[4096] = {};
+  struct bpf_insn insn_buf[64];
+  struct bpf_insn* insn = insn_buf;
+
+  if (has_btf()) {
+    int kfunc_btf_id = btf_.get_btf_id(kfunc, "vmlinux");
+    if (kfunc_btf_id <= 0) {
+      return false;
+    }
+    *insn++ = BPF_CALL_KFUNC(0, kfunc_btf_id);
+    *insn++ = BPF_MOV64_IMM(BPF_REG_0, 0);
+    *insn++ = BPF_EXIT_INSN();
+  }
+  size_t cnt = insn - insn_buf;
+
+  if (try_load_(nullptr,
+                prog_type,
+                std::nullopt,
+                std::nullopt,
+                insn_buf,
+                cnt,
+                1,
+                logbuf,
+                4096)) {
+    return true;
+  }
+
+  return false;
+}
+
+// Used to test whether acquire-release paired kfuncs are supported in a
+// certain type of BPF program. The reason release is necessary is because
+// of the Verifier.
+// Such as bpf_task_from_pid() and bpf_task_release().
+bool BPFfeature::detect_kfunc_pair(const char* kfunc_acquire,
+                                   const char* kfunc_release,
+                                   enum bpf_prog_type prog_type)
+{
+  char logbuf[4096] = {};
+  struct bpf_insn insn_buf[64];
+  struct bpf_insn* insn = insn_buf;
+
+  if (has_btf()) {
+    int acquire_btf_id = btf_.get_btf_id(kfunc_acquire, "vmlinux");
+    int release_btf_id = btf_.get_btf_id(kfunc_release, "vmlinux");
+
+    if (acquire_btf_id <= 0 || release_btf_id <= 0) {
+      return false;
+    }
+
+    *insn++ = BPF_MOV64_IMM(BPF_REG_1, 0);
+    *insn++ = BPF_CALL_KFUNC(0, acquire_btf_id);
+    *insn++ = BPF_JMP_IMM(BPF_JNE, BPF_REG_0, 0, 1);
+    *insn++ = BPF_JMP_IMM(BPF_JA, 0, 0, 2);
+    // Fortunately, the release kfunc currently only has one parameter,
+    // so setting r1 is sufficient.
+    *insn++ = BPF_MOV64_REG(BPF_REG_1, BPF_REG_0);
+    *insn++ = BPF_CALL_KFUNC(0, release_btf_id);
+    *insn++ = BPF_MOV64_IMM(BPF_REG_0, 0);
+    *insn++ = BPF_EXIT_INSN();
+  }
+  size_t cnt = insn - insn_buf;
+
+  if (try_load_(nullptr,
+                prog_type,
+                std::nullopt,
+                std::nullopt,
+                insn_buf,
+                cnt,
+                1,
+                logbuf,
+                4096)) {
+    return true;
+  }
+
+  return false;
+}
+
 bool BPFfeature::detect_prog_type(enum bpf_prog_type prog_type,
                                   const char* name,
                                   std::optional<bpf_attach_type> attach_type,

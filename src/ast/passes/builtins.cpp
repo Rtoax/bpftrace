@@ -4,6 +4,7 @@
 #include "ast/passes/builtins.h"
 #include "ast/signal_bt.h"
 #include "ast/visitor.h"
+#include "bpffeature.h"
 #include "bpftrace.h"
 #include "log.h"
 #include "util/paths.h"
@@ -105,6 +106,29 @@ std::optional<Expression> Builtins::visit(Call &call)
         }
         return ast_.make_node<Integer>(str->loc, signal_num);
       }
+    }
+  } else if (call.func == "__builtin_kfunc_check") {
+    auto *probe = dynamic_cast<Probe *>(top_level_node_);
+    if (!probe) {
+      return std::nullopt;
+    }
+    ProbeType type = probetype(probe->attach_points.front()->provider);
+    enum bpf_prog_type prog_type = get_bpf_prog_type(type);
+    if (call.vargs.size() == 1) {
+      String *kfunc = call.vargs.at(0).as<String>();
+      return ast_.make_node<Integer>(
+          kfunc->loc,
+          bpftrace_.feature_->detect_kfunc(kfunc->value.c_str(), prog_type));
+    } else if (call.vargs.size() == 2) {
+      String *kfunc1 = call.vargs.at(0).as<String>();
+      String *kfunc2 = call.vargs.at(1).as<String>();
+      return ast_.make_node<Integer>(
+          kfunc1->loc,
+          bpftrace_.feature_->detect_kfunc_pair(kfunc1->value.c_str(),
+                                                kfunc2->value.c_str(),
+                                                prog_type));
+    } else {
+      call.addError() << "__builtin_kfunc_check expects 1 or 2 argument";
     }
   }
   return std::nullopt;

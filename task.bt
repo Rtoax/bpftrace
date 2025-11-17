@@ -1,0 +1,30 @@
+#!/bin/env bpftrace
+
+macro test() {
+  printf("%s %d\n", probetype, __builtin_kfunc_check("bpf_cgroup_acquire", "bpf_cgroup_release"));
+  printf("%s %d\n", probetype, __builtin_kfunc_check("bpf_task_from_pid", "bpf_task_release"));
+  printf("%s %d\n", probetype, __builtin_kfunc_check("bpf_cpumask_create", "bpf_cpumask_release"));
+  printf("%s %d\n", probetype, __builtin_kfunc_check("bpf_crypto_ctx_acquire", "bpf_crypto_ctx_release"));
+  printf("%s %d\n", probetype, __builtin_kfunc_check("bpf_strstr"));
+}
+
+//$ kill -CHLD {1,2,3,4,5,6}
+tracepoint:syscalls:sys_enter_kill,
+tracepoint:syscalls:sys_enter_tkill,
+tracepoint:syscalls:sys_enter_tgkill
+{
+  test();
+}
+
+kprobe:__x64_sys_kill,
+kprobe:__x64_sys_tgkill,
+kprobe:__x64_sys_tkill
+{
+  test();
+}
+
+uprobe:/bin/bash:readline,
+uprobe:libreadline:readline
+{
+  test();
+}
