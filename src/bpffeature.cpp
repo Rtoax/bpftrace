@@ -184,6 +184,85 @@ bool BPFfeature::detect_helper(enum bpf_func_id func_id,
          (strstr(buf, "program of this type cannot use helper ") == nullptr);
 }
 
+// Used to test whether kfuncs are supported in a certain type of BPF program.
+bool BPFfeature::detect_kfunc(const char* kfunc, enum bpf_prog_type prog_type)
+{
+  char logbuf[4096] = {};
+  struct bpf_insn insn_buf[512];
+  size_t insn_cnt = 0;
+  std::string kfunc_str(kfunc);
+
+  bpf_insns_fn fn = get_kfunc_test_insns_fn(kfunc_str);
+  // Not registered
+  if (fn == nullptr)
+    return false;
+
+  if ((this->*fn)(insn_buf, &insn_cnt) == nullptr)
+    return false;
+
+  if (try_load_(nullptr,
+                prog_type,
+                std::nullopt,
+                std::nullopt,
+                insn_buf,
+                insn_cnt,
+                1,
+                logbuf,
+                4096)) {
+    return true;
+  }
+
+  return false;
+}
+
+struct bpf_insn* BPFfeature::bpf_task_from_pid_insns(struct bpf_insn* insn_buf,
+                                                     size_t* cnt)
+{
+  struct bpf_insn* insn = insn_buf;
+
+  if (has_btf()) {
+    // Because of the BPF Verifier, we have to ensure that pointers are valid
+    // and free them. acquire and release must appear in pairs for the check
+    // to pass.
+    int acquire_btf_id = btf_.get_btf_id("bpf_task_from_pid", "vmlinux");
+    int release_btf_id = btf_.get_btf_id("bpf_task_release", "vmlinux");
+
+    if (acquire_btf_id <= 0 || release_btf_id <= 0) {
+      return nullptr;
+    }
+
+    *insn++ = BPF_MOV64_IMM(BPF_REG_1, 0);
+    *insn++ = BPF_CALL_KFUNC(0, acquire_btf_id);
+    *insn++ = BPF_JMP_IMM(BPF_JNE, BPF_REG_0, 0, 1);
+    *insn++ = BPF_JMP_IMM(BPF_JA, 0, 0, 2);
+    *insn++ = BPF_MOV64_REG(BPF_REG_1, BPF_REG_0);
+    *insn++ = BPF_CALL_KFUNC(0, release_btf_id);
+    *insn++ = BPF_MOV64_IMM(BPF_REG_0, 0);
+    *insn++ = BPF_EXIT_INSN();
+
+    *cnt = insn - insn_buf;
+    return insn_buf;
+  }
+  return nullptr;
+}
+
+void BPFfeature::register_all_kfunc_test_insns(void)
+{
+  kfunc_test_insn_map_["bpf_task_from_pid"] =
+      &BPFfeature::bpf_task_from_pid_insns;
+}
+
+BPFfeature::bpf_insns_fn BPFfeature::get_kfunc_test_insns_fn(std::string& kfunc)
+{
+  auto iter = kfunc_test_insn_map_.find(kfunc);
+  return iter != kfunc_test_insn_map_.end() ? iter->second : nullptr;
+}
+
+bool BPFfeature::has_kfunc_test_insns(std::string kfunc)
+{
+  return !!get_kfunc_test_insns_fn(kfunc);
+}
+
 bool BPFfeature::detect_prog_type(enum bpf_prog_type prog_type,
                                   const char* name,
                                   std::optional<bpf_attach_type> attach_type,
