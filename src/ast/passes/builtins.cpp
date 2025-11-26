@@ -97,7 +97,7 @@ std::optional<Expression> Builtins::visit(Call &call)
   Visitor<Builtins, std::optional<Expression>>::visit(call);
   if (call.func == "__builtin_signal_num") {
     if (call.vargs.size() != 1) {
-      call.addError() << "__builtin_signal_num expects 1 argument";
+      call.addError() << call.func << " expects 1 argument";
     } else {
       if (auto *str = call.vargs.at(0).as<String>()) {
         auto signal_num = signal_name_to_num(str->value);
@@ -105,6 +105,13 @@ std::optional<Expression> Builtins::visit(Call &call)
           call.addError() << "Invalid string for signal: " << str->value;
         }
         return ast_.make_node<Integer>(str->loc, signal_num);
+      } else {
+        return ast_.make_node<Call>(
+            call.vargs.at(0).loc(),
+            "fail",
+            ExpressionList{ ast_.make_node<String>(
+                call.vargs.at(0).loc(),
+                "Signal expects a single string literal argument.") });
       }
     }
   } else if (call.func == "__builtin_kfunc_exist") {
