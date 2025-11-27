@@ -1,0 +1,43 @@
+#!/bin/env bpftrace
+
+/*
+begin {
+  let $sig = "SIGINT";
+  printf("%d\n", __builtin_signal_num($sig));
+}
+*/
+
+/*
+macro test() {
+  let $sig = "SIGINT";
+  printf("%s %d\n", probetype, __builtin_signal_num($sig));
+}
+*/
+
+macro test2(expr) {
+  if comptime is_str(expr) {
+    printf("%d\n", __builtin_kfunc_exist(expr));
+  }
+}
+
+tracepoint:syscalls:sys_enter_kill,
+tracepoint:syscalls:sys_enter_tkill,
+tracepoint:syscalls:sys_enter_tgkill
+{
+  test2("1");
+}
+
+/*
+kprobe:__x64_sys_kill,
+kprobe:__x64_sys_tgkill,
+kprobe:__x64_sys_tkill
+{
+  test();
+}
+
+uprobe:/bin/bash:readline,
+uprobe:libreadline:readline
+{
+  test();
+}
+*/

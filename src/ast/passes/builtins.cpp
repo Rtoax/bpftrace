@@ -2,6 +2,7 @@
 
 #include "arch/arch.h"
 #include "ast/passes/builtins.h"
+#include "ast/passes/fold_literals.h"
 #include "ast/signal_bt.h"
 #include "ast/visitor.h"
 #include "bpffeature.h"
@@ -26,6 +27,7 @@ public:
   std::optional<Expression> visit(Expression &expression);
   std::optional<Expression> visit(For &f);
   std::optional<Expression> visit(Probe &probe);
+  std::optional<Expression> visit(IfExpr &if_expr);
   std::optional<Expression> check(const std::string &ident, Node &node);
 
   Probe *get_probe(Node &node, std::string name);
@@ -114,7 +116,9 @@ std::optional<Expression> Builtins::check(const std::string &ident, Node &node)
 
 std::optional<Expression> Builtins::visit(Call &call)
 {
+  std::cout << __FILE__ << ": " << __func__ << ": " << __LINE__ << "call: " << call.func << std::endl;
   Visitor<Builtins, std::optional<Expression>>::visit(call);
+  std::cout << __FILE__ << ": " << __func__ << ": " << __LINE__ << "call: " << call.func << std::endl;
   if (call.func == "__builtin_signal_num") {
     if (call.vargs.size() != 1) {
       call.addError() << call.func << " expects 1 argument";
@@ -295,6 +299,7 @@ std::optional<Expression> Builtins::visit(Expression &expression)
 
 std::optional<Expression> Builtins::visit(For &f)
 {
+  std::cout << __FILE__ << ": " << __func__ << ": " << __LINE__ << std::endl;
   // Currently, we do not pass BPF context to the callback so disable builtins
   // which require ctx access.
   CollectNodes<Builtin> builtins;

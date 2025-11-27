@@ -662,6 +662,7 @@ std::optional<Expression> LiteralFolder::visit(PositionalParameter &param)
 
 std::optional<Expression> LiteralFolder::visit(Call &call)
 {
+  std::cout << __FILE__ << ": " << __func__ << ": " << __LINE__ << "call: " << call.func << std::endl;
   // If this is the string function, then we can evaluate the given literal
   // as a string (e.g. this covers str(0) and str($3)).
   if (call.func == "str" && !call.vargs.empty()) {

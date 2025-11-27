@@ -1,0 +1,13 @@
+#!/bin/env bpftrace
+tracepoint:syscalls:sys_enter_kill,
+tracepoint:syscalls:sys_enter_tkill,
+tracepoint:syscalls:sys_enter_tgkill,
+{
+  let $s = "a";
+  if comptime (is_str($s)) {
+    __builtin_kfunc_exist($s);
+    printf("str\n");
+  } else {
+    printf("not str %s\n", typeinfo(1).1);
+  }
+}
