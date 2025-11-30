@@ -121,7 +121,7 @@ Result<const Macro *> MacroRegistry::lookup(
   return make_error<MacroLookupError>(name, std::move(closest));
 }
 
-class MacroExpander : public Visitor<MacroExpander> {
+class MacroExpander : public Visitor<MacroExpander, std::optional<Expression>> {
 public:
   MacroExpander(ASTContext &ast,
                 const MacroRegistry &registry,
@@ -132,13 +132,14 @@ public:
         stack_(stack),
         should_rename_(should_rename) {};
 
-  using Visitor<MacroExpander>::visit;
+  using Visitor<MacroExpander, std::optional<Expression>>::visit;
 
-  void visit(AssignVarStatement &assignment);
-  void visit(Variable &var);
-  void visit(VarDeclStatement &decl);
-  void visit(Map &map);
-  void visit(Expression &expr);
+  std::optional<Expression> visit(AssignVarStatement &assignment);
+  std::optional<Expression> visit(Variable &var);
+  std::optional<Expression> visit(Builtin &ident);
+  std::optional<Expression> visit(VarDeclStatement &decl);
+  std::optional<Expression> visit(Map &map);
+  std::optional<Expression> visit(Expression &expr);
 
   std::optional<BlockExpr *> expand(const Macro &macro, Call &call);
   std::optional<BlockExpr *> expand(const Macro &macro, Identifier &ident);
@@ -151,6 +152,7 @@ private:
 
   bool rename_ok();
   std::string get_new_var_ident(std::string original_ident);
+  std::string get_new_builtin_ident(std::string original_ident);
 
   // Maps of macro map/var names -> callsite map/var names
   std::unordered_map<std::string, std::string> maps_;
@@ -159,11 +161,11 @@ private:
   std::unordered_map<std::string, Expression> passed_exprs_;
 };
 
-void MacroExpander::visit(AssignVarStatement &assignment)
+std::optional<Expression> MacroExpander::visit(AssignVarStatement &assignment)
 {
   if (!rename_ok()) {
     visit(assignment.expr);
-    return;
+    return std::nullopt;
   }
 
   auto *var = assignment.var();
@@ -179,29 +181,31 @@ void MacroExpander::visit(AssignVarStatement &assignment)
     visit(std::get<Variable *>(assignment.var_decl));
   }
   visit(assignment.expr);
+  return std::nullopt;
 }
 
-void MacroExpander::visit(VarDeclStatement &decl)
+std::optional<Expression> MacroExpander::visit(VarDeclStatement &decl)
 {
   if (!rename_ok()) {
-    return;
+    return std::nullopt;
   }
 
   auto *var = decl.var;
   if (vars_.contains(var->ident)) {
     decl.addError() << "Variable declaration shadows macro arg " << var->ident;
-    return;
+    return std::nullopt;
   }
   renamed_vars_.insert(var->ident);
 
   visit(decl.typeof);
   visit(decl.var);
+  return std::nullopt;
 }
 
-void MacroExpander::visit(Variable &var)
+std::optional<Expression> MacroExpander::visit(Variable &var)
 {
   if (!rename_ok()) {
-    return;
+    return std::nullopt;
   }
 
   if (auto it = vars_.find(var.ident); it != vars_.end()) {
@@ -209,12 +213,13 @@ void MacroExpander::visit(Variable &var)
   } else if (renamed_vars_.contains(var.ident)) {
     var.ident = get_new_var_ident(var.ident);
   }
+  return std::nullopt;
 }
 
-void MacroExpander::visit(Map &map)
+std::optional<Expression> MacroExpander::visit(Map &map)
 {
   if (!rename_ok()) {
-    return;
+    return std::nullopt;
   }
 
   if (auto it = maps_.find(map.ident); it != maps_.end()) {
@@ -223,16 +228,35 @@ void MacroExpander::visit(Map &map)
     map.addError() << "Unhygienic access to map: " << map.ident
                    << ". Maps must be passed into the macro as arguments.";
   }
+  return std::nullopt;
 }
 
-void MacroExpander::visit(Expression &expr)
+std::optional<Expression> MacroExpander::visit(Builtin &builtin)
+{
+  if (!rename_ok()) {
+    return std::nullopt;
+  }
+
+  if (auto it = passed_exprs_.find(builtin.ident); it != passed_exprs_.end()) {
+    return it->second;
+  }
+  return std::nullopt;
+}
+
+std::optional<Expression> MacroExpander::visit(Expression &expr)
 {
   auto *ident = expr.as<Identifier>();
   auto *call = expr.as<Call>();
 
+  auto replacement = visit(expr.value);
+  if (replacement) {
+    expr.value = replacement->value;
+    return std::nullopt;
+  }
+
   if (!ident && !call) {
-    Visitor<MacroExpander>::visit(expr);
-    return;
+    Visitor<MacroExpander, std::optional<Expression>>::visit(expr);
+    return std::nullopt;
   }
 
   if (ident) {
@@ -245,7 +269,7 @@ void MacroExpander::visit(Expression &expr)
 
       MacroExpander expander(ast_, registry_, stack_, false);
       expander.visit(expr);
-      return;
+      return std::nullopt;
     }
   }
   if (call) {
@@ -323,7 +347,7 @@ void MacroExpander::visit(Expression &expr)
       // This should not happen; add the error.
       LOG(BUG) << done.takeError();
     }
-    return;
+    return std::nullopt;
   }
 
   const auto *macro = *result;
@@ -337,7 +361,7 @@ void MacroExpander::visit(Expression &expr)
         err << stack_.at(j)->name << " > ";
       }
       err << macro->name;
-      return;
+      return std::nullopt;
     }
   }
 
@@ -349,6 +373,7 @@ void MacroExpander::visit(Expression &expr)
   if (r) {
     expr.value = *r;
   }
+  return std::nullopt;
 }
 
 bool MacroExpander::rename_ok()
@@ -363,6 +388,20 @@ std::string MacroExpander::get_new_var_ident(std::string original_ident)
   assert(rename_ok());
   const auto *macro = stack_.back();
   std::string base = "$$" + macro->name;
+  if (stack_.size() != 1) {
+    base += "_" + std::to_string(stack_.size());
+  }
+  return base + "_" + original_ident;
+}
+
+std::string MacroExpander::get_new_builtin_ident(std::string original_ident)
+{
+  // This is a name like $$MACROARGBUILTIN_foo_0_x, where `x` is the original
+  // builtin name (such as pid), `foo` is the macro name, and `0` is the depth
+  // of the call, `MACROARGBUILTIN` as a token in semantic analysis.
+  assert(rename_ok());
+  const auto *macro = stack_.back();
+  std::string base = "$$MACROARGBUILTIN_" + macro->name;
   if (stack_.size() != 1) {
     base += "_" + std::to_string(stack_.size());
   }
