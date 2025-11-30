@@ -1036,6 +1036,10 @@ void SemanticAnalyser::visit(Builtin &builtin)
                             "tracepoint/fentry/uprobe probes ("
                          << type << " used here)";
     }
+  } else if (builtin.ident.starts_with("$$MACROARGBUILTIN")) {
+    // TODO:
+    builtin.builtin_type = CreateUInt64();
+  } else if (builtin.ident == "__builtin_curtask") {
   } else {
     builtin.addError() << "Unknown builtin variable: '" << builtin.ident << "'";
   }
