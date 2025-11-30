@@ -136,6 +136,7 @@ public:
 
   void visit(AssignVarStatement &assignment);
   void visit(Variable &var);
+  void visit(Builtin &ident);
   void visit(VarDeclStatement &decl);
   void visit(Map &map);
   void visit(Expression &expr);
@@ -151,6 +152,7 @@ private:
 
   bool rename_ok();
   std::string get_new_var_ident(std::string original_ident);
+  std::string get_new_builtin_ident(std::string original_ident);
 
   // Maps of macro map/var names -> callsite map/var names
   std::unordered_map<std::string, std::string> maps_;
@@ -222,6 +224,25 @@ void MacroExpander::visit(Map &map)
   } else {
     map.addError() << "Unhygienic access to map: " << map.ident
                    << ". Maps must be passed into the macro as arguments.";
+  }
+}
+
+void MacroExpander::visit(Builtin &builtin)
+{
+  if (!rename_ok()) {
+    return;
+  }
+
+  std::cout << "Builtin: " << builtin.ident << std::endl;
+  if (auto it = passed_exprs_.find(builtin.ident); it != passed_exprs_.end()) {
+    std::cout << "builtin passed_exprs_: " << builtin.ident << std::endl;
+    auto expr = clone(ast_, builtin.loc, it->second);
+    MacroExpander expander(ast_, registry_, stack_, false);
+    expander.visit(expr);
+    // TODO:
+    builtin.ident = get_new_builtin_ident(builtin.ident);
+    // ast_.make_node<Expression>(builtin.loc, it->second);
+    // builtin = ast_.make_node<None>(builtin.loc);
   }
 }
 
@@ -363,6 +384,20 @@ std::string MacroExpander::get_new_var_ident(std::string original_ident)
   assert(rename_ok());
   const auto *macro = stack_.back();
   std::string base = "$$" + macro->name;
+  if (stack_.size() != 1) {
+    base += "_" + std::to_string(stack_.size());
+  }
+  return base + "_" + original_ident;
+}
+
+std::string MacroExpander::get_new_builtin_ident(std::string original_ident)
+{
+  // This is a name like $$MACROARGBUILTIN_foo_0_x, where `x` is the original
+  // builtin name (such as pid), `foo` is the macro name, and `0` is the depth
+  // of the call, `MACROARGBUILTIN` as a token in semantic analysis.
+  assert(rename_ok());
+  const auto *macro = stack_.back();
+  std::string base = "$$MACROARGBUILTIN_" + macro->name;
   if (stack_.size() != 1) {
     base += "_" + std::to_string(stack_.size());
   }
