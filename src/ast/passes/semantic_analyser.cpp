@@ -1047,7 +1047,8 @@ void SemanticAnalyser::visit(Builtin &builtin)
                          << type << " used here)";
     }
   } else {
-    builtin.addError() << "Unknown builtin variable: '" << builtin.ident << "'";
+    expand_macro(ctx_, expr, macro_registry_);
+    //builtin.addError() << "Unknown builtin variable: '" << builtin.ident << "'";
   }
 }
 

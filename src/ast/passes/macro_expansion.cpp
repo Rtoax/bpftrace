@@ -18,6 +18,11 @@ void MacroLookupError::log(llvm::raw_ostream &OS) const
   OS << "Unable to find macro " << name_;
 }
 
+#define DEBUG(fmt...) {	\
+  printf("%s:%d ", __func__, __LINE__);	\
+  printf(fmt);	\
+}
+
 static bool validate(Macro *macro)
 {
   std::unordered_set<std::string> seen_mvars;
@@ -136,6 +141,7 @@ public:
 
   void visit(AssignVarStatement &assignment);
   void visit(Variable &var);
+  void visit(Builtin &ident);
   void visit(VarDeclStatement &decl);
   void visit(Map &map);
   void visit(Expression &expr);
@@ -161,12 +167,14 @@ private:
 
 void MacroExpander::visit(AssignVarStatement &assignment)
 {
+  DEBUG("\n");
   if (!rename_ok()) {
     visit(assignment.expr);
     return;
   }
 
   auto *var = assignment.var();
+  DEBUG("\n");
 
   // Don't rename any variable passed by reference.
   if (!vars_.contains(var->ident)) {
@@ -183,6 +191,7 @@ void MacroExpander::visit(AssignVarStatement &assignment)
 
 void MacroExpander::visit(VarDeclStatement &decl)
 {
+  DEBUG("\n");
   if (!rename_ok()) {
     return;
   }
@@ -192,6 +201,7 @@ void MacroExpander::visit(VarDeclStatement &decl)
     decl.addError() << "Variable declaration shadows macro arg " << var->ident;
     return;
   }
+  std::cout << "VarDeclStatement: " << var->ident << std::endl;
   renamed_vars_.insert(var->ident);
 
   visit(decl.typeof);
@@ -200,19 +210,41 @@ void MacroExpander::visit(VarDeclStatement &decl)
 
 void MacroExpander::visit(Variable &var)
 {
+  DEBUG("\n");
   if (!rename_ok()) {
     return;
   }
 
+  std::cout << "Variable before: " << var.ident << std::endl;
   if (auto it = vars_.find(var.ident); it != vars_.end()) {
     var.ident = it->second;
+    std::cout << "Variable after1: " << var.ident << std::endl;
   } else if (renamed_vars_.contains(var.ident)) {
     var.ident = get_new_var_ident(var.ident);
+    std::cout << "Variable after2: " << var.ident << std::endl;
+  }
+}
+
+void MacroExpander::visit(Builtin &builtin)
+{
+  DEBUG("\n");
+  if (!rename_ok()) {
+    return;
+  }
+
+  std::cout << "Builtin: " << builtin.ident << std::endl;
+  if (auto it = passed_exprs_.find(builtin.ident); it != passed_exprs_.end()) {
+      std::cout << "builtin passed_exprs_: " << builtin.ident << std::endl;
+      auto expr = clone(ast_, builtin.loc, it->second);
+      MacroExpander expander(ast_, registry_, stack_, false);
+      expander.visit(expr);
+      builtin.ident = get_new_var_ident(builtin.ident);
   }
 }
 
 void MacroExpander::visit(Map &map)
 {
+  DEBUG("\n");
   if (!rename_ok()) {
     return;
   }
@@ -227,16 +259,23 @@ void MacroExpander::visit(Map &map)
 
 void MacroExpander::visit(Expression &expr)
 {
+  DEBUG("\n");
   auto *ident = expr.as<Identifier>();
+  auto *builtin = expr.as<Builtin>();
   auto *call = expr.as<Call>();
 
   if (!ident && !call) {
     Visitor<MacroExpander>::visit(expr);
     return;
   }
+  if (builtin) {
+    std::cout << "builtin: " << builtin->ident << std::endl;
+  }
 
   if (ident) {
+    std::cout << "ident: " << ident->ident << std::endl;
     if (auto it = passed_exprs_.find(ident->ident); it != passed_exprs_.end()) {
+      std::cout << "ident passed_exprs_: " << ident->ident << std::endl;
       expr = clone(ast_, ident->loc, it->second);
       // Create a new expander because we're visiting an expression passed into
       // the macro so it's not part of the surounding macro code and therefore
@@ -249,6 +288,10 @@ void MacroExpander::visit(Expression &expr)
     }
   }
   if (call) {
+    std::cout << "call: " << call->func << std::endl;
+    for (size_t i = 0; i < call->vargs.size(); i++) {
+      std::cout << "call: " << call->func << ", " << i << std::endl;
+    }
     visit(call->vargs);
   }
 
@@ -256,12 +299,16 @@ void MacroExpander::visit(Expression &expr)
   const std::string &name = ident ? ident->ident : call->func;
   const std::vector<Expression> &args = ident ? empty : call->vargs;
 
+  std::cout << "lookup: " << name << std::endl;
+
   auto result = registry_.lookup(name, args);
+
   if (!result) {
     auto done = handleErrors(
         std::move(result), [&](const MacroLookupError &lookupErr) {
           const auto &closest = lookupErr.closest();
           if (closest.empty()) {
+            std::cout << "closest.empty: " << name << std::endl;
             // It does not match any macros. This is not really an error, and
             // just means that we don't process or expand this instance.
             return;
@@ -377,13 +424,20 @@ std::optional<BlockExpr *> MacroExpander::expand(const Macro &macro, Call &call)
 
   StatementList stmt_list;
   for (size_t i = 0; i < macro.vargs.size(); i++) {
+    if (auto *mbuiltin = macro.vargs.at(i).as<Builtin>()) {
+      std::cout << "mbuiltin: Builtin: " << mbuiltin->ident << ", call: " << call.func << std::endl;
+    }
+
     if (auto *mident = macro.vargs.at(i).as<Identifier>()) {
+      std::cout << "mident: " << mident->ident << ", call: " << call.func << std::endl;
       if (call.vargs.at(i).is<Variable>() || call.vargs.at(i).is<Map>()) {
         // Wrap variables and maps in a block to avoid mutation.
         passed_exprs_[mident->ident] = ast_.make_node<BlockExpr>(
             call.loc, StatementList({}), call.vargs.at(i));
+        std::cout << "mident: Variable|Map: " << mident->ident << ", call: " << call.func << std::endl;
       } else {
         passed_exprs_[mident->ident] = call.vargs.at(i);
+        std::cout << "mident: else: " << mident->ident << ", call: " << call.func << std::endl;
       }
     } else if (auto *mvar = macro.vargs.at(i).as<Variable>()) {
       auto *cvar = call.vargs.at(i).as<Variable>();
@@ -393,6 +447,8 @@ std::optional<BlockExpr *> MacroExpander::expand(const Macro &macro, Call &call)
       auto *cmap = call.vargs.at(i).as<Map>();
       assert(cmap != nullptr); // Required by lookup.
       maps_[mmap->ident] = cmap->ident;
+    } else {
+      assert(0 && "aaaaaaaaaa");
     }
   }
 
@@ -410,6 +466,7 @@ std::optional<BlockExpr *> MacroExpander::expand(const Macro &macro,
                      << macro.vargs.size() << " but got 0.";
     return std::nullopt;
   }
+  std::cout << "expand ident: " << ident.ident << std::endl;
 
   auto *cloned_block = clone(ast_, ident.loc, macro.block);
   visit(cloned_block);
@@ -431,6 +488,7 @@ Pass CreateMacroExpansionPass()
     auto macros = MacroRegistry::create(ast);
     std::vector<const Macro *> stack;
     MacroExpander expander(ast, macros, stack);
+    DEBUG("\n");
     expander.visit(ast.root);
     return macros;
   };
