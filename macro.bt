@@ -1,0 +1,22 @@
+#!/bin/bpftrace
+
+macro test(pid, __builtin_comm, ppid, $pid, _pid, flags) {
+  printf("%d %s %d %d %d %d\n", pid, __builtin_comm, ppid, $pid, _pid, flags);
+}
+
+macro test(a1, a2) {
+  printf("a1 %d, a2 %d\n", a1, a2);
+}
+
+macro test(arg1) {
+  test(arg1, 2);
+}
+
+begin {
+  $p1 = 1;
+  $p2 = 2;
+  $c1 = "c1";
+  test(1, $c1, $p1, $p2, 3, 4);
+
+  test(1);
+}
