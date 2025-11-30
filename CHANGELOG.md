@@ -70,6 +70,8 @@ and this project adheres to
 - Drop support for LLVM 16
   - [#4534](https://github.com/bpftrace/bpftrace/pull/4534)
 #### Fixed
+- Properly handle macro parameters for built-in
+  - [#4873](https://github.com/bpftrace/bpftrace/pull/4873)
 - Fix language part being overwritten in uprobe attachpoint parser
   - [#4856](https://github.com/bpftrace/bpftrace/pull/4856)
 - output: prevent crash when printing overflow-only lhist

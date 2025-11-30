@@ -111,6 +111,14 @@ NAME indirect map and variable access
 PROG macro second(a, b) { print((a, b)); } macro first(@b, $x) { second(@b, $x); } begin { @d = 5; $y = 1; first(@d, $y); }
 EXPECT (5, 1)
 
+NAME macro parameter for builtin pid
+PROG macro test(pid) { pid } begin { print(test(1)); }
+EXPECT 1
+
+NAME macro parameter for builtin argN
+PROG macro test(arg0, arg1, arg2, arg3) { printf("%d %d %d %d\n", arg0, arg1, arg2, arg3) } begin { test(1, 2, 3, 4); }
+EXPECT 1 2 3 4
+
 # Test builtins
 NAME builtin wrapper comm
 PROG begin { if (__builtin_comm == comm() && __builtin_comm == comm) { print(comm); } }
