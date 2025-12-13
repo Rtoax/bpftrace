@@ -129,6 +129,8 @@ struct VariableLLVM {
   llvm::Type *type;
 };
 
+std::map<std::string, VariableLLVM> g_variables_;
+
 // ScopedExpr ties an SSA value to a "delete" function, that typically will end
 // the lifetime of some needed storage. You must explicitly construct a
 // ScopedExpr from either:
@@ -394,7 +396,8 @@ private:
 
   void maybeAllocVariable(const std::string &var_ident,
                           const SizedType &var_type,
-                          const Location &loc);
+                          const Location &loc,
+                          bool global);
   VariableLLVM *maybeGetVariable(const std::string &var_ident);
   VariableLLVM &getVariable(const std::string &var_ident);
 
@@ -2965,7 +2968,8 @@ ScopedExpr CodegenLLVM::visit(AssignMapStatement &assignment)
 
 void CodegenLLVM::maybeAllocVariable(const std::string &var_ident,
                                      const SizedType &var_type,
-                                     const Location &loc)
+                                     const Location &loc,
+                                     bool global = false)
 {
   if (maybeGetVariable(var_ident) != nullptr) {
     // Already been allocated
@@ -2982,10 +2986,25 @@ void CodegenLLVM::maybeAllocVariable(const std::string &var_ident,
     alloca_type = CreatePointer(pointee_type, var_type.GetAS());
   }
 
-  auto *val = b_.CreateVariableAllocationInit(alloca_type, var_ident, loc);
-  variables_[scope_stack_.back()][var_ident] = VariableLLVM{
-    .value = val, .type = b_.GetType(alloca_type)
-  };
+  if (global) {
+    auto *var = llvm::dyn_cast<GlobalVariable>(
+        module_->getOrInsertGlobal(var_ident, b_.GetType(alloca_type)));
+    var->setInitializer(Constant::getNullValue(b_.GetType(alloca_type)));
+    var->setConstant(false);
+    var->setSection(".data");
+    var->setExternallyInitialized(true);
+    var->setDSOLocal(true);
+    var->addDebugInfo(debug_.createGlobalVariable(var_ident, alloca_type));
+
+    g_variables_[var_ident] = VariableLLVM{ .value = var,
+                                            .type = b_.GetType(alloca_type) };
+  } else {
+    auto *val = b_.CreateVariableAllocationInit(alloca_type, var_ident, loc);
+
+    variables_[scope_stack_.back()][var_ident] = VariableLLVM{
+      .value = val, .type = b_.GetType(alloca_type)
+    };
+  }
 }
 
 VariableLLVM *CodegenLLVM::maybeGetVariable(const std::string &var_ident)
@@ -2996,6 +3015,12 @@ VariableLLVM *CodegenLLVM::maybeGetVariable(const std::string &var_ident)
       return &search_val->second;
     }
   }
+
+  if (auto search_val = g_variables_.find(var_ident);
+      search_val != g_variables_.end()) {
+    return &search_val->second;
+  }
+
   return nullptr;
 }
 
@@ -3074,7 +3099,16 @@ ScopedExpr CodegenLLVM::visit(AssignVarStatement &assignment)
     __builtin_unreachable();
   }
 
-  maybeAllocVariable(var.ident, var.var_type, var.loc);
+  bool global = false;
+  if (auto stmt_ptr_ptr = std::get_if<VarDeclStatement *>(
+          &assignment.var_decl)) {
+    VarDeclStatement *stmt_ptr = *stmt_ptr_ptr;
+    if (stmt_ptr) {
+      global = stmt_ptr->global;
+    }
+  }
+
+  maybeAllocVariable(var.ident, var.var_type, var.loc, global);
 
   if (var.var_type.IsArrayTy() || var.var_type.IsCStructTy()) {
     // For arrays and structs, only the pointer is stored. However, this means
@@ -3098,7 +3132,7 @@ ScopedExpr CodegenLLVM::visit(VarDeclStatement &decl)
     // unused and has no type
     return ScopedExpr();
   }
-  maybeAllocVariable(var.ident, var.var_type, var.loc);
+  maybeAllocVariable(var.ident, var.var_type, var.loc, decl.global);
   return ScopedExpr();
 }
 
