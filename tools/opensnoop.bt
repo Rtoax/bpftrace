@@ -36,6 +36,8 @@
 // 08-Sep-2018	Brendan Gregg	Created this.
 // 16-Sep-2025	Rong Tao	Support fullpath of file.
 
+#define MAX_PATH_DEPTH	getopt("depth", 35)
+
 config = {
   missing_probes = warn;
 }
@@ -60,7 +62,7 @@ macro getcwd(@paths)
   $mnt = (struct mount *)(((uint64)$vfsmnt) - offsetof(struct mount, mnt));
   $mnt_root = $vfsmnt.mnt_root;
 
-  $max_path_depth = getopt("depth", 35);
+  $max_path_depth = MAX_PATH_DEPTH;
 
   for $j : ((uint64)0)..((uint64)$max_path_depth) {
 
@@ -88,7 +90,7 @@ macro getcwd(@paths)
 
 macro printcwd(@paths)
 {
-  $max_path_depth = getopt("depth", 35);
+  $max_path_depth = MAX_PATH_DEPTH;
 
   for $j : ((uint64)0)..((uint64)$max_path_depth) {
     let $key = (tid,((((uint64)$max_path_depth) - $j) - 1));
