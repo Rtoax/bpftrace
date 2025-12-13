@@ -129,6 +129,8 @@ struct VariableLLVM {
   llvm::Type *type;
 };
 
+std::map<std::string, VariableLLVM> g_variables_;
+
 // ScopedExpr ties an SSA value to a "delete" function, that typically will end
 // the lifetime of some needed storage. You must explicitly construct a
 // ScopedExpr from either:
@@ -394,7 +396,8 @@ private:
 
   void maybeAllocVariable(const std::string &var_ident,
                           const SizedType &var_type,
-                          const Location &loc);
+                          const Location &loc,
+                          bool global);
   VariableLLVM *maybeGetVariable(const std::string &var_ident);
   VariableLLVM &getVariable(const std::string &var_ident);
 
@@ -425,6 +428,7 @@ private:
   int next_probe_index_ = 1;
   bool inside_subprog_ = false;
 
+#define GLOBAL_SCOPE ((Node *)0xFFFFFFFFUL)
   std::vector<Node *> scope_stack_;
   std::unordered_map<Node *, std::map<std::string, VariableLLVM>> variables_;
 
@@ -2966,7 +2970,8 @@ ScopedExpr CodegenLLVM::visit(AssignMapStatement &assignment)
 
 void CodegenLLVM::maybeAllocVariable(const std::string &var_ident,
                                      const SizedType &var_type,
-                                     const Location &loc)
+                                     const Location &loc,
+                                     bool global = false)
 {
   if (maybeGetVariable(var_ident) != nullptr) {
     // Already been allocated
@@ -2984,19 +2989,74 @@ void CodegenLLVM::maybeAllocVariable(const std::string &var_ident,
   }
 
   auto *val = b_.CreateVariableAllocationInit(alloca_type, var_ident, loc);
-  variables_[scope_stack_.back()][var_ident] = VariableLLVM{
+  Node *scope = scope_stack_.back();
+
+  if (global) {
+    g_variables_[var_ident] = VariableLLVM{
+      .value = val, .type = b_.GetType(alloca_type)
+    };
+  }
+
+  std::cout << std::endl;
+  std::cout << "maybeAllocVariable(var=" << var_ident << ", global=" << global
+            << ") [set], scope " << scope << std::endl;
+  variables_[scope][var_ident] = VariableLLVM{
     .value = val, .type = b_.GetType(alloca_type)
   };
+  std::cout << "variables_[" << scope << "] add " << var_ident << std::endl;
+
+#if 1
+  for (const auto& outer_pair : variables_) {
+    Node *node_ptr = outer_pair.first;
+    const std::map<std::string, VariableLLVM>& inner_map = outer_pair.second;
+
+    for (const auto& inner_pair : inner_map) {
+      const std::string& var_name = inner_pair.first;
+      std::cout << "alloc: variables_[" << node_ptr << "] has " << var_name << std::endl;
+    }
+  }
+#endif
 }
 
 VariableLLVM *CodegenLLVM::maybeGetVariable(const std::string &var_ident)
 {
+#if 1
+  std::cout << std::endl;
+  for (const auto& outer_pair : variables_) {
+    Node *node_ptr = outer_pair.first;
+    const std::map<std::string, VariableLLVM>& inner_map = outer_pair.second;
+
+    for (const auto& inner_pair : inner_map) {
+      const std::string& var_name = inner_pair.first;
+      std::cout << "get: variables_[" << node_ptr << "] has " << var_name << std::endl;
+    }
+  }
+#endif
+
   for (auto *scope : scope_stack_) {
     if (auto search_val = variables_[scope].find(var_ident);
         search_val != variables_[scope].end()) {
       return &search_val->second;
     }
   }
+
+  std::cout << "maybeGetVariable(var=" << var_ident << ") [geting]" << std::endl;
+
+#if 0
+  if (auto search_val = variables_[GLOBAL_SCOPE].find(var_ident);
+      search_val != variables_[GLOBAL_SCOPE].end()) {
+    std::cout << "maybeGetVariable(var=" << var_ident << ") [got]" << std::endl;
+    return &search_val->second;
+  }
+#endif
+  if (auto search_val = g_variables_.find(var_ident);
+      search_val != g_variables_.end()) {
+    std::cout << "maybeGetVariable(var=" << var_ident << ") [got]" << std::endl;
+    return &search_val->second;
+  }
+
+  std::cout << "maybeGetVariable(var=" << var_ident << ") [not get]" << std::endl;
+
   return nullptr;
 }
 
@@ -3075,6 +3135,7 @@ ScopedExpr CodegenLLVM::visit(AssignVarStatement &assignment)
     __builtin_unreachable();
   }
 
+  //auto *decl = std::holds_alternative<VarDeclStatement *>(assignment.var_decl);
   maybeAllocVariable(var.ident, var.var_type, var.loc);
 
   if (var.var_type.IsArrayTy() || var.var_type.IsCStructTy()) {
@@ -3099,7 +3160,7 @@ ScopedExpr CodegenLLVM::visit(VarDeclStatement &decl)
     // unused and has no type
     return ScopedExpr();
   }
-  maybeAllocVariable(var.ident, var.var_type, var.loc);
+  maybeAllocVariable(var.ident, var.var_type, var.loc, decl.global);
   return ScopedExpr();
 }
 
