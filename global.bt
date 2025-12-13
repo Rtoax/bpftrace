@@ -1,0 +1,26 @@
+#!/usr/bin/env bpftrace
+
+config = {
+  missing_probes = warn;
+}
+
+BEGIN {
+	//global $g_a = 12;
+	global $g_a: int32;
+	//global $g_b = 12;
+	let $a = 12;
+	let $b = 12;
+}
+
+tracepoint:syscalls:sys_enter_open,
+tracepoint:syscalls:sys_enter_openat,
+tracepoint:syscalls:sys_enter_openat2
+{
+}
+
+END {
+	let $x = 12;
+	let $y = 12;
+	printf("$g_a = %d\n", $g_a);
+	//printf("$a = %d\n", $a);
+}
