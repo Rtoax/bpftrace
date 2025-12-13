@@ -75,6 +75,8 @@
 //
 // 13-Sep-2018	Brendan Gregg	Created this.
 
+#define SYSNAME	getopt("sysname")
+
 BEGIN
 {
   printf("Counting syscalls... Hit Ctrl-C to end.\n"); // ausyscall --dump | awk 'NR > 1 { printf("\t@sysname[%d] = \"%s\";\n", $1, $2); }'
@@ -82,9 +84,7 @@ BEGIN
 
 tracepoint:raw_syscalls:sys_enter
 {
-  $sysname = getopt("sysname");
-
-  if $sysname {
+  if SYSNAME {
     @syscallname[syscall_name(args.id)] = count();
   } else {
     @syscall[args.id] = count();
@@ -101,9 +101,7 @@ macro display_map(description, @map)
 
 END
 {
-  $sysname = getopt("sysname");
-
-  if $sysname {
+  if SYSNAME {
     display_map("\nTop 10 syscalls NAMEs:\n", @syscallname);
   } else {
     display_map("\nTop 10 syscalls IDs:\n", @syscall);

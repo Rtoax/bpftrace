@@ -142,6 +142,7 @@ void yyerror(bpftrace::Driver &driver, const char *s);
 %token <std::string> IMPORT "import"
 %token <std::string> HEADER "header"
 %token <bool> BOOL "bool"
+%token <std::string> GLOBAL "global"
 
 %type <ast::Operator> unary_op compound_op
 %type <std::string> attach_point_def attach_point_elem ident keyword external_name
@@ -189,6 +190,8 @@ void yyerror(bpftrace::Driver &driver, const char *s);
 %type <SizedType> type int_type pointer_type struct_type
 %type <ast::Variable *> var
 %type <ast::VariableAddr *> var_addr
+%type <std::vector<ast::AssignVarStatement *>> globalvar_defs
+%type <ast::AssignVarStatement *> globalvar_def
 %type <ast::MapAddr *> map_addr
 %type <ast::Program *> program
 %type <std::string> header c_struct
@@ -246,8 +249,8 @@ header:
         |       %empty { $$ = ""; }
 
 program:
-                header c_definitions config imports root_stmts END {
-                    $$ = driver.ctx.make_node<ast::Program>(@$, std::move($2), $3, std::move($4), std::move($5), $1);
+                header c_definitions config globalvar_defs imports root_stmts END {
+                    $$ = driver.ctx.make_node<ast::Program>(@$, std::move($2), $3, std::move($5), std::move($6), $1);
                 }
                 ;
 
@@ -271,6 +274,16 @@ c_definitions:
                     $$.push_back(driver.ctx.make_node<ast::CStatement>(driver.loc, s));
                 }
         |       %empty { $$ = ast::CStatementList(); }
+                ;
+
+globalvar_defs:
+                globalvar_defs globalvar_def   { $$ = std::move($1); $$.push_back($2); }
+        |       %empty { $$ = std::vector<ast::AssignVarStatement *>{}; }
+                ;
+
+globalvar_def:
+                GLOBAL var_decl_stmt ASSIGN expr { $$ = driver.ctx.make_node<ast::AssignVarStatement>(@$, $2, $4); }
+        |       GLOBAL var ASSIGN expr           { $$ = driver.ctx.make_node<ast::AssignVarStatement>(@$, $2, $4); }
                 ;
 
 imports:
