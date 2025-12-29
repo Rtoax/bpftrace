@@ -32,6 +32,7 @@ private:
   // and no unmatched quotes.
   State lex_attachpoint(const AttachPoint &ap);
 
+  bool should_skip_tracepoint(AttachPoint &ap);
   State special_parser();
   State test_parser();
   State benchmark_parser();
