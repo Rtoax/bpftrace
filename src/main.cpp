@@ -344,8 +344,8 @@ void CreateDynamicPasses(std::function<void(ast::Pass&& pass)> add)
 {
   add(ast::CreateClangBuildPass());
   add(ast::CreateTypeSystemPass());
-  add(ast::CreateSemanticPass());
   add(ast::CreateProbePrunePass());
+  add(ast::CreateSemanticPass());
   add(ast::CreateResourcePass());
 }
 
@@ -354,8 +354,8 @@ void CreateAotPasses(std::function<void(ast::Pass&& pass)> add)
   add(ast::CreatePortabilityPass());
   add(ast::CreateClangBuildPass());
   add(ast::CreateTypeSystemPass());
-  add(ast::CreateSemanticPass());
   add(ast::CreateProbePrunePass());
+  add(ast::CreateSemanticPass());
   add(ast::CreateResourcePass());
 }
 
