@@ -113,6 +113,15 @@ public:
     return true;
   }
 
+  bool is_module_loaded(const std::string &module) const override
+  {
+    if (module == "vmlinux" || module == "mock_vmlinux" ||
+        module == "kernel_mod" || module == "other_kernel_mod") {
+      return true;
+    }
+    return false;
+  }
+
   Result<uint64_t> get_buffer_pages(
       bool __attribute__((unused)) /*per_cpu*/) const override
   {
