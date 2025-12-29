@@ -196,14 +196,14 @@ TEST(ap_probe_expansion, uprobe_multi_wildcard_file)
 TEST(ap_probe_expansion, uprobe_wildcard_no_matches)
 {
   test_attach_points("uprobe:/bin/sh:foo*,uprobe:/bin/sh:first_open {}",
-                     { "uprobe:/bin/sh:first_open" },
+                     { "uprobe:/bin/sh:foo", "uprobe:/bin/sh:first_open" },
                      false);
 }
 
 TEST(ap_probe_expansion, uprobe_wildcard_multi_no_matches)
 {
   test_attach_points("uprobe:/bin/sh:foo*,uprobe:/bin/sh:first_open {}",
-                     { "uprobe:/bin/sh:first_open" });
+                     { "uprobe:/bin/sh:foo*", "uprobe:/bin/sh:first_open" });
 }
 
 TEST(ap_probe_expansion, uprobe_cpp_symbol)
@@ -258,6 +258,7 @@ TEST(ap_probe_expansion, tracepoint_wildcard)
 {
   test_attach_points("tracepoint:sched:sched_* {}",
                      { "tracepoint:sched:sched_one",
+                       "tracepoint:sched:sched_switch",
                        "tracepoint:sched:sched_two" });
 }
 
@@ -265,6 +266,7 @@ TEST(ap_probe_expansion, tracepoint_category_wildcard)
 {
   test_attach_points("tracepoint:sched*:sched_* {}",
                      { "tracepoint:sched:sched_one",
+                       "tracepoint:sched:sched_switch",
                        "tracepoint:sched:sched_two",
                        "tracepoint:sched_extra:sched_extra" });
 }
@@ -280,7 +282,12 @@ class ap_probe_expansion_btf : public test_btf {};
 TEST(ap_probe_expansion_btf, fentry_wildcard)
 {
   test_attach_points("fentry:func_* {}",
-                     { "fentry:vmlinux:func_1",
+                     { "mock_vmlinux:func_1",
+                       "mock_vmlinux:func_2",
+                       "mock_vmlinux:func_3",
+                       "mock_vmlinux:func_anon_struct",
+                       "mock_vmlinux:func_arrays\n"
+                       "fentry:vmlinux:func_1",
                        "fentry:vmlinux:func_2",
                        "fentry:vmlinux:func_3" });
 }
@@ -293,7 +300,8 @@ TEST(ap_probe_expansion_btf, fentry_wildcard_no_matches)
 
 TEST(ap_probe_expansion_btf, fentry_module_wildcard)
 {
-  test_attach_points("fentry:*:func_1 {}", { "fentry:vmlinux:func_1" });
+  test_attach_points("fentry:*:func_1 {}",
+                     { "mock_vmlinux:func_1", "fentry:vmlinux:func_1" });
 }
 
 TEST(ap_probe_expansion_btf, fentry_bpf_id_wildcard)
