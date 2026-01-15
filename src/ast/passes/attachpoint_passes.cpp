@@ -44,7 +44,7 @@ void AttachPointChecker::visit(AttachPoint &ap)
       ap.addError() << "kprobes should be attached to a function";
     // Warn if user tries to attach to a non-traceable function
     if (bpftrace_.config_->missing_probes != ConfigMissingProbes::ignore &&
-        !util::has_wildcard(ap.func) && !bpftrace_.is_traceable_func(ap.func)) {
+        !util::has_wildcard(ap.func) && !util::is_traceable_func(ap.func)) {
       ap.addWarning() << ap.func
                       << " is not traceable (either non-existing, inlined, "
                          "or marked as "

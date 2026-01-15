@@ -556,7 +556,7 @@ Result<std::shared_ptr<Struct>> BTF::resolve_args(std::string_view func,
   }
 
   if (check_traceable) {
-    if (bpftrace_ && !bpftrace_->is_traceable_func(std::string(func))) {
+    if (bpftrace_ && !util::is_traceable_func(std::string(func))) {
       if (bpftrace_->get_traceable_funcs().empty()) {
         return make_error<ast::ArgParseError>(
             func,
@@ -655,7 +655,7 @@ std::string BTF::get_all_funcs_from_btf(const BTFObj &btf_obj) const
       break;
     }
 
-    if (bpftrace_ && !bpftrace_->is_traceable_func(func_name))
+    if (bpftrace_ && !util::is_traceable_func(func_name))
       continue;
 
     if (btf_vlen(t) > arch::Host::arguments().size())

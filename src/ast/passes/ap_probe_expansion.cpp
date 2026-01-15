@@ -330,7 +330,7 @@ void ProbeAndApExpander::visit(AttachPointList &aps)
           const std::string &funcname = ap->func;
           const std::string &modname = ap->target;
           if ((!modname.empty()) && modname != "vmlinux") {
-            if (!bpftrace_.is_module_loaded(modname)) {
+            if (!util::is_module_loaded(modname)) {
               ap->addError() << "specified module " + modname + " in probe " +
                                     ap->provider + ":" + modname + ":" +
                                     funcname + " is not loaded.";

@@ -489,7 +489,7 @@ Result<std::unique_ptr<AttachedKprobeProbe>> AttachedKprobeProbe::make(
     BPFtrace &bpftrace)
 {
   if ((!probe.attach_point.empty() || probe.address != 0) &&
-      !bpftrace.is_traceable_func(probe.attach_point))
+      !util::is_traceable_func(probe.attach_point))
     return make_error<AttachError>();
 
   std::string funcname = probe.attach_point;
