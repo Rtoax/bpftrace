@@ -1,0 +1,8 @@
+#!/usr/bin/env bpftrace
+
+begin {
+}
+
+end {
+	clear(@name);
+}
