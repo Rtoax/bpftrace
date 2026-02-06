@@ -16,9 +16,21 @@ namespace bpftrace::ast {
 // Additionally we track scalar/non-scalar map errors here but defer actually
 // issuing the errors on the nodes until a later pass as they may removed if
 // they are inside branch that is pruned at compile time
+
+struct MapStat {
+  bool is_scalar;
+  uint32_t assignment_times;
+
+  friend std::ostream& operator<<(std::ostream& os, const MapStat& stat) {
+    os << "is_scalar: " << stat.is_scalar << ", assignment times: "
+       << stat.assignment_times;
+    return os;
+  }
+};
+
 class MapMetadata : public ast::State<"map-metadata"> {
 public:
-  std::unordered_map<std::string, bool> scalar;
+  std::unordered_map<std::string, MapStat> scalar;
   std::unordered_set<Node *> bad_scalar_access;
   std::unordered_set<Node *> bad_indexed_access;
   std::unordered_set<Node *> bad_scalar_call;

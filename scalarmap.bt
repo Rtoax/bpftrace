@@ -1,0 +1,31 @@
+#!/bin/env bpftrace
+
+begin {
+  @scalarmap = 1;
+  @scalarmap = 2;
+  @scalarmap = getopt("a", 2);
+  $a = @scalarmap;
+  $a = @scalarmap;
+  $a = @scalarmap;
+  $a = @scalarmap;
+  $a = @scalarmap;
+
+  @scalarmap2 = 1;
+  $a = @scalarmap2;
+  $a = @scalarmap2;
+  $a = @scalarmap2;
+  $a = @scalarmap2;
+  $a = @scalarmap2;
+
+  printf("scalarmap = %d\n", @scalarmap);
+
+  @vectormap[1] = 1;
+  @vectormap[2] = 2;
+  @vectormap[2] = 2;
+  @vectormap[2] = 2;
+  @vectormap[3] = 3;
+
+  @scalarmap3 = @vectormap[4];
+  // ERROR: @scalarmap used as a map with an explicit key (non-scalar map), previously used without an explicit key (scalar map)
+  // @scalarmap[1] = 1;
+}
