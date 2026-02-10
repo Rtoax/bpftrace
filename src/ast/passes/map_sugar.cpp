@@ -51,8 +51,8 @@ public:
   void visit(Expression &expr);
   void visit(Statement &stmt);
 
-  [[nodiscard]] bool check(Map &map, bool indexed);
-  void checkAccess(Map &map, bool indexed);
+  [[nodiscard]] bool check(Map &map, bool indexed, bool assignment);
+  void checkAccess(Map &map, bool indexed, bool assignment);
   void checkCall(Map &map, bool indexed);
 
   MapMetadata metadata;
@@ -110,12 +110,14 @@ private:
 
 void MapDefaultKey::visit(Map &map)
 {
-  checkAccess(map, false);
+  std::cout << "Map: " << std::endl;
+  checkAccess(map, false, false);
 }
 
 void MapDefaultKey::visit(MapAccess &acc)
 {
-  checkAccess(*acc.map, true);
+  std::cout << "MapAccess: " << std::endl;
+  checkAccess(*acc.map, true, false);
   visit(acc.key);
 }
 
@@ -138,7 +140,7 @@ void MapDefaultKey::visit(Typeof &typeof)
     if (auto *map = expr.as<Map>()) {
       // Don't de-sugar if it's a non-scalar map
       auto val = metadata.scalar.find(map->ident);
-      if (val != metadata.scalar.end() && !val->second) {
+      if (val != metadata.scalar.end() && !val->second.is_scalar) {
         return;
       }
     }
@@ -148,13 +150,15 @@ void MapDefaultKey::visit(Typeof &typeof)
 
 void MapDefaultKey::visit(AssignScalarMapStatement &assign)
 {
-  checkAccess(*assign.map, false);
+  std::cout << "AssignScalarMapStatement: " << std::endl;
+  checkAccess(*assign.map, false, true);
   visit(assign.expr);
 }
 
 void MapDefaultKey::visit(AssignMapStatement &assign)
 {
-  checkAccess(*assign.map_access->map, true);
+  std::cout << "AssignMapStatement: " << std::endl;
+  checkAccess(*assign.map_access->map, true, true);
   visit(assign.map_access);
   visit(assign.expr);
 }
@@ -176,12 +180,15 @@ void MapDefaultKey::visit(Statement &stmt)
 {
   Visitor<MapDefaultKey>::visit(stmt);
 
+  std::cout << "Statement: " << std::endl;
+
   // Replace with a statement that has the default index, in the same way as
   // above. This will be type-checked in a later pass.
   if (auto *map = stmt.as<AssignScalarMapStatement>()) {
     auto *index = ast_.make_node<Integer>(map->loc, 0, CreateInt64());
     auto *acc = ast_.make_node<MapAccess>(map->loc, map->map, index);
     stmt.value = ast_.make_node<AssignMapStatement>(map->loc, acc, map->expr);
+    std::cout << "map: " << map->map->ident << std::endl;
   }
 }
 
@@ -198,21 +205,25 @@ void MapDefaultKey::visit(Program &program)
   }
 }
 
-bool MapDefaultKey::check(Map &map, bool indexed)
+bool MapDefaultKey::check(Map &map, bool indexed, bool assignment)
 {
   bool scalar = !indexed;
+  MapStat stat = { scalar, assignment ? 1U : 0 };
   auto val = metadata.scalar.find(map.ident);
   if (val == metadata.scalar.end()) {
-    metadata.scalar.emplace(map.ident, scalar);
+    metadata.scalar.emplace(map.ident, stat);
     return true;
   } else {
-    return val->second == scalar;
+    if (assignment) {
+      val->second.assignment_times++;
+    }
+    return val->second.is_scalar == scalar;
   }
 }
 
-void MapDefaultKey::checkAccess(Map &map, bool indexed)
+void MapDefaultKey::checkAccess(Map &map, bool indexed, bool assignment)
 {
-  if (!check(map, indexed)) {
+  if (!check(map, indexed, assignment)) {
     if (indexed) {
       metadata.bad_scalar_access.insert(&map);
     } else {
@@ -223,7 +234,7 @@ void MapDefaultKey::checkAccess(Map &map, bool indexed)
 
 void MapDefaultKey::checkCall(Map &map, bool indexed)
 {
-  if (!check(map, indexed)) {
+  if (!check(map, indexed, false)) {
     if (indexed) {
       metadata.bad_scalar_call.insert(&map);
     } else {
@@ -263,7 +274,7 @@ void MapDefaultKey::visit(Call &call)
 void MapDefaultKey::visit(For &for_loop)
 {
   if (auto *map = for_loop.iterable.as<Map>()) {
-    if (!check(*map, true)) {
+    if (!check(*map, true, false)) {
       metadata.bad_iterator.insert(map);
     }
   } else {
@@ -354,7 +365,7 @@ void MapScalarCheck::visit(Expression &expr)
           expr.node().addError() << "Unknown map: " << map->ident;
           return;
         }
-        expr.value = ast_.make_node<Boolean>(call->loc, val->second);
+        expr.value = ast_.make_node<Boolean>(call->loc, val->second.is_scalar);
       } else {
         expr.node().addError()
             << call->func << "() expects a map for the first argument";

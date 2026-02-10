@@ -599,7 +599,9 @@ void ResourceAnalyser::update_map_info(Map &map)
   auto &map_info = resources_.maps_info[map.ident];
   map_info.value_type = map.value_type;
   map_info.key_type = map.key_type;
-  map_info.is_scalar = map_metadata_.scalar[map.ident];
+  map_info.is_scalar = map_metadata_.scalar[map.ident].is_scalar;
+
+  std::cout << "map: " << map.ident << ", " << map_metadata_.scalar[map.ident] << std::endl;
 
   auto decl = map_decls_.find(map.ident);
   if (decl != map_decls_.end()) {
