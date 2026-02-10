@@ -175,9 +175,10 @@ int run_bpftrace(BPFtrace &bpftrace,
                              if (!err.empty()) {
                                LOG(ERROR) << err;
                              }
-                             auto hint = uo_err.hint();
-                             if (!hint.empty()) {
-                               LOG(HINT) << hint;
+                             if (uo_err.has_help()) {
+                               LOG(HINT) << uo_err.help();
+                             } else {
+                               LOG(HINT) << uo_err.hint();
                              }
                            });
     if (!ok) {
