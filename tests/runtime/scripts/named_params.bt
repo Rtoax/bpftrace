@@ -1,4 +1,4 @@
 begin
 {
-  print(getopt("aa", 10));
+  print(getopt("aa", 10, "AA"));
 }

@@ -369,18 +369,18 @@ EXPECT_REGEX .*ERROR: Invalid value for license. Found: Potato. Valid values: Du
 WILL_FAIL
 
 NAME named command line params
-RUN {{BPFTRACE}} -e 'begin { print((getopt("aa", 20), getopt("bb", -1), getopt("cc", true), getopt("dd"), getopt("ee", "hello")));  }' -- --dd --aa=0xffffffffffffffff --bb=-10 --cc=False
+RUN {{BPFTRACE}} -e 'begin { print((getopt("aa", 20, "AA"), getopt("bb", -1, "BB"), getopt("cc", true, "CC"), getopt("dd", "DD"), getopt("ee", "hello", "EE")));  }' -- --dd --aa=0xffffffffffffffff --bb=-10 --cc=False
 EXPECT (18446744073709551615, -10, false, true, hello)
 TIMEOUT 1
 
 NAME named and positional params
-RUN {{BPFTRACE}} -e 'begin { print(($1, getopt("aa", 10), getopt("bb", -1), $2, getopt("cc", "hello"), getopt("dd")));  }' pos1 -- --aa=20 --bb=5 --cc=bye pos2 --dd
+RUN {{BPFTRACE}} -e 'begin { print(($1, getopt("aa", 10, "AA"), getopt("bb", -1, "BB"), $2, getopt("cc", "hello", "CC"), getopt("dd", "DD")));  }' pos1 -- --aa=20 --bb=5 --cc=bye pos2 --dd
 EXPECT (pos1, 20, 5, pos2, bye, true)
 TIMEOUT 1
 
 # Can't run through the standard AOT path because we need to pass CLI args
 NAME named command line params aot
-RUN {{BPFTRACE}} -e 'begin { print((getopt("aa", 10), getopt("cc", true), getopt("dd"), getopt("ee", "hello")));  }' --aot /tmp/tmpprog.btaot && /tmp/tmpprog.btaot -- --dd --aa=20 --cc=False
+RUN {{BPFTRACE}} -e 'begin { print((getopt("aa", 10, "AA"), getopt("cc", true, "CC"), getopt("dd", "DD"), getopt("ee", "hello", "EE")));  }' --aot /tmp/tmpprog.btaot && /tmp/tmpprog.btaot -- --dd --aa=20 --cc=False
 EXPECT (20, false, true, hello)
 TIMEOUT 1
 
@@ -395,14 +395,15 @@ EXPECT USAGE:
 WILL_FAIL
 
 NAME named command line params wrong value type
-RUN {{BPFTRACE}} -e 'begin { print(getopt("aa", 10));  }' -- --aa=False
+RUN {{BPFTRACE}} -e 'begin { print(getopt("aa", 10, "AA"));  }' -- --aa=False
 EXPECT ERROR: program command line option --aa invalid integer (value: False)
 EXPECT_NONE USAGE:
 WILL_FAIL
 
 NAME unexpected named command line params
-RUN {{BPFTRACE}} -e 'begin { print(getopt("aa", 10));  }' -- --bb
+RUN {{BPFTRACE}} -e 'begin { print(getopt("aa", 10, "AA"));  }' -- --bb
 EXPECT ERROR: unexpected program command line options: --bb
-EXPECT HINT: expected program options: --aa
+EXPECT HINT: expected program options:
+EXPECT --aa: AA
 EXPECT_NONE USAGE:
 WILL_FAIL

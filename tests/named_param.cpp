@@ -58,38 +58,42 @@ void test_error(const std::string& input, const std::string& error)
 
 TEST(named_param, basic_checks)
 {
-  test("begin { $a = getopt(\"hello\"); }",
+  test("begin { $a = getopt(\"hello\", \"Hello\"); }",
        Program().WithProbe(ProbeMatcher().WithStatements({ AssignVarStatement(
            Variable("$a"), MapAccess(Map("hello"), Integer(0))) })));
 
-  test("begin { $a = getopt(\"hello\", 1); }",
+  test("begin { $a = getopt(\"hello\", 1, \"Hello\"); }",
        Program().WithProbe(ProbeMatcher().WithStatements({ AssignVarStatement(
            Variable("$a"), MapAccess(Map("hello"), Integer(0))) })));
 
-  test("begin { $a = getopt(\"hello\", true); }",
+  test("begin { $a = getopt(\"hello\", true, \"Hello\"); }",
        Program().WithProbe(ProbeMatcher().WithStatements({ AssignVarStatement(
            Variable("$a"), MapAccess(Map("hello"), Integer(0))) })));
 
-  test("begin { $a = getopt(\"hello\", false); }",
+  test("begin { $a = getopt(\"hello\", false, \"Hello\"); }",
        Program().WithProbe(ProbeMatcher().WithStatements({ AssignVarStatement(
            Variable("$a"), MapAccess(Map("hello"), Integer(0))) })));
 
-  test(R"(begin { $a = getopt("hello", "bye"); })",
+  test(R"(begin { $a = getopt("hello", "bye", "Hello"); })",
        Program().WithProbe(ProbeMatcher().WithStatements({ AssignVarStatement(
            Variable("$a"), MapAccess(Map("hello"), Integer(0))) })));
 
   test_error("begin { $a = getopt(10); }",
              "First argument to 'getopt' must be a string literal");
-  test_error("begin { $a = getopt(\"hello\", $a); }",
+  test_error("begin { $a = getopt(\"hello\", $a, \"Hello\"); }",
              "Second argument to 'getopt' must be a string literal, integer "
              "literal, or a boolean literal.");
-  test_error("begin { $a = getopt(\"hello\", banana); }",
+  test_error("begin { $a = getopt(\"hello\", banana, \"Hello\"); }",
              "Second argument to 'getopt' must be a string literal, integer "
              "literal, or a boolean literal.");
   test_error(
-      R"(begin { $a = getopt("hello", 1); $b = getopt("hello", "bye"); })",
+      R"(begin { $a = getopt("hello", 1, "Hello"); $b = getopt("hello", "bye", "Hello"); })",
       "Command line option 'hello' needs to have the same default value in all "
       "places it is used. Previous default value: 1");
+  test_error(
+      R"(begin { $a = getopt("hello", 1, "Hello1"); $b = getopt("hello", 1, "Hello2"); })",
+      "Command line option 'hello' needs to have the same description in all "
+      "places it is used. Previous description: Hello1");
 }
 
 } // namespace bpftrace::test::named_param

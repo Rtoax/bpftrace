@@ -40,7 +40,7 @@ private:
 class UnknownParamError : public ErrorInfo<UnknownParamError> {
 public:
   UnknownParamError(std::vector<std::string> &&unexpected,
-                    std::vector<std::string> &&expected)
+                    std::vector<std::pair<std::string, std::string>> &&expected)
       : unexpected_(std::move(unexpected)), expected_(std::move(expected)) {};
   static char ID;
   void log(llvm::raw_ostream &OS) const override;
@@ -71,7 +71,7 @@ public:
 
   std::string hint() const
   {
-    std::string hint = "expected program options: ";
+    std::string hint = "expected program options:\n";
 
     size_t j;
 
@@ -81,9 +81,11 @@ public:
 
     for (j = 0; j < expected_.size(); ++j) {
       hint += "--";
-      hint += expected_[j];
+      hint += expected_[j].first;
+      hint += ": ";
+      hint += expected_[j].second;
       if (j != expected_.size() - 1) {
-        hint += ", ";
+        hint += "\n";
       }
     }
     return hint;
@@ -91,7 +93,7 @@ public:
 
 private:
   std::vector<std::string> unexpected_;
-  std::vector<std::string> expected_;
+  std::vector<std::pair<std::string, std::string>> expected_;
 };
 
 using GlobalVarValue = std::variant<std::string, int64_t, uint64_t, bool>;
@@ -140,6 +142,7 @@ struct GlobalVarConfig {
     opt_unsigned,
   };
   std::optional<Type> type = std::nullopt;
+  std::string description;
 
 private:
   friend class cereal::access;
@@ -191,7 +194,8 @@ public:
 
   void add_known(const std::string_view &name);
   void add_named_param(const std::string &name,
-                       const GlobalVarValue &default_value);
+                       const GlobalVarValue &default_value,
+                       const std::string &description);
   Result<GlobalVarMap> get_named_param_vals(
       std::vector<std::string> raw_named_params) const;
   const GlobalVarConfig &get_config(const std::string &name) const;
