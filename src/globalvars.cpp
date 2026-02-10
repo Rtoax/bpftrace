@@ -347,7 +347,8 @@ void GlobalVars::add_known(const std::string_view &name)
 }
 
 void GlobalVars::add_named_param(const std::string &name,
-                                 const GlobalVarValue &default_val)
+                                 const GlobalVarValue &default_val,
+                                 const std::string description)
 {
   if (added_global_vars_.contains(name)) {
     return;
@@ -355,6 +356,7 @@ void GlobalVars::add_named_param(const std::string &name,
   added_global_vars_[name] = GlobalVarConfig({
       .section = std::string(RO_SECTION_NAME),
       .type = get_global_var_type(default_val),
+      .description = std::string(description),
   });
   named_param_defaults_[name] = default_val;
 }
@@ -405,9 +407,10 @@ Result<GlobalVarMap> GlobalVars::get_named_param_vals(
   }
 
   if (!unexpected_params.empty()) {
-    std::vector<std::string> expected_params;
+    std::vector<std::pair<std::string, std::string>> expected_params;
     for (const auto &[name, _] : named_param_defaults_) {
-      expected_params.push_back(name);
+      expected_params.push_back(
+          std::make_pair(name, get_config(name).description));
     }
 
     return make_error<UnknownParamError>(std::move(unexpected_params),

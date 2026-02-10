@@ -1,0 +1,20 @@
+#!/bin/env bpftrace
+
+/*
+macro flag() {
+	getopt("flag", "description flag")
+}
+*/
+
+begin {
+	if getopt("flag", false, "description flag") {
+		getopt("flag", false, "description flag");
+		//getopt("flag1", 1, "description flag1");
+		//printf("%d\n", getopt("a", 1, "description a"));
+	}
+
+/*
+	printf("%d\n", getopt("a", 1, "description a"));
+	printf("%d\n", getopt("b", 1, "description b"));
+*/
+}

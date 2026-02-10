@@ -333,26 +333,26 @@ Name of the current function being traced (kprobes,uprobes,fentry)
 
 
 ### getopt
-- `bool getopt(string arg_name)`
-- `string getopt(string arg_name, string default_value)`
-- `int getopt(string arg_name, int default_value)`
-- `bool getopt(string arg_name, bool default_value)`
+- `bool getopt(string arg_name, string description)`
+- `string getopt(string arg_name, string default_value, string description)`
+- `int getopt(string arg_name, int default_value, string description)`
+- `bool getopt(string arg_name, bool default_value, string description)`
 
 Get the named command line argument/option e.g.
 ```
-# bpftrace -e 'BEGIN { print(getopt("hello", 1)); }' -- --hello=5
+# bpftrace -e 'BEGIN { print(getopt("hello", 1, "Hello")); }' -- --hello=5
 
 ```
 
 `getopt` defines the type of the argument by the default value’s type.
-If no default type is provided, the option is treated like a boolean arg e.g. `getopt("hello")` would evaluate to `false` if `--hello` is not specified on the command line or `true` if `--hello` is passed or set to one of the following values: `true`, `1`.
+If no default type is provided, the option is treated like a boolean arg e.g. `getopt("hello", "Hello")` would evaluate to `false` if `--hello` is not specified on the command line or `true` if `--hello` is passed or set to one of the following values: `true`, `1`.
 Additionally, boolean args accept the following false values: `0`, `false` e.g. `--hello=false`.
 If the arg is not set on the command line, the default value is used.
 
 You can use `--help` to see all named arguments/options.
 
 ```
-# bpftrace -e 'BEGIN { print((getopt("aa", 10), getopt("bb", "hello"), getopt("cc"), getopt("dd", false))); }' -- --cc --bb=bye
+# bpftrace -e 'BEGIN { print((getopt("aa", 10, "AA"), getopt("bb", "hello", "BB"), getopt("cc", "CC"), getopt("dd", false, "DD"))); }' -- --cc --bb=bye
 
 ```
 
