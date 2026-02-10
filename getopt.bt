@@ -1,0 +1,6 @@
+#!/bin/env bpftrace
+
+begin {
+	printf("%d\n", getopt("a", 1, "descript a"));
+	printf("%d\n", getopt("b", 1, "descript b"));
+}

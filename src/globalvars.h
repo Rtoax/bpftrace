@@ -140,6 +140,7 @@ struct GlobalVarConfig {
     opt_unsigned,
   };
   std::optional<Type> type = std::nullopt;
+  std::string description;
 
 private:
   friend class cereal::access;
@@ -191,7 +192,8 @@ public:
 
   void add_known(const std::string_view &name);
   void add_named_param(const std::string &name,
-                       const GlobalVarValue &default_value);
+                       const GlobalVarValue &default_value,
+                       const std::string description);
   Result<GlobalVarMap> get_named_param_vals(
       std::vector<std::string> raw_named_params) const;
   const GlobalVarConfig &get_config(const std::string &name) const;

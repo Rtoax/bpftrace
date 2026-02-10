@@ -102,7 +102,8 @@ void NamedParamPass::visit(Expression &expr)
   expr.value = ast_.make_node<MapAccess>(map_node->loc, map_node, index);
 
   used_args[arg_name->value] = np_default;
-  defaults.defaults[arg_name->value] = std::move(np_default);
+  defaults.defaults[arg_name->value] = std::make_pair(std::move(np_default),
+                                                      "Description");
 }
 
 Pass CreateNamedParamsPass()

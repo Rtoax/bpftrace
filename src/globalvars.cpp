@@ -347,7 +347,8 @@ void GlobalVars::add_known(const std::string_view &name)
 }
 
 void GlobalVars::add_named_param(const std::string &name,
-                                 const GlobalVarValue &default_val)
+                                 const GlobalVarValue &default_val,
+                                 const std::string description)
 {
   if (added_global_vars_.contains(name)) {
     return;
@@ -355,6 +356,7 @@ void GlobalVars::add_named_param(const std::string &name,
   added_global_vars_[name] = GlobalVarConfig({
       .section = std::string(RO_SECTION_NAME),
       .type = get_global_var_type(default_val),
+      .description = std::string(description),
   });
   named_param_defaults_[name] = default_val;
 }

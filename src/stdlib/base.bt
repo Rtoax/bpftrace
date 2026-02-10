@@ -389,10 +389,10 @@ macro func()
 }
 
 // :function getopt
-// :variant bool getopt(string arg_name)
-// :variant string getopt(string arg_name, string default_value)
-// :variant int getopt(string arg_name, int default_value)
-// :variant bool getopt(string arg_name, bool default_value)
+// :variant bool getopt(string arg_name[, string description])
+// :variant string getopt(string arg_name, string default_value[, string description])
+// :variant int getopt(string arg_name, int default_value[, string description])
+// :variant bool getopt(string arg_name, bool default_value[, string description])
 //
 // Get the named command line argument/option e.g.
 // ```
