@@ -25,6 +25,10 @@ and this project adheres to
 - `BPFTRACE_DEBUG_OUTPUT` is removed, and errors are now propagated via the runtime error path
   - [#4976](https://github.com/bpftrace/bpftrace/pull/4976)
 #### Added
+- `getopt()` add optional description argument
+  - [#4998](https://github.com/bpftrace/bpftrace/pull/4998)
+- Add `--probe-filter` CLI flag to selectively run probes matching a regex
+  - [#5011](https://github.com/bpftrace/bpftrace/pull/5011)
 - Add `comm()` support for PID parameters.
   - [#4799](https://github.com/bpftrace/bpftrace/pull/4799)
 - Add `syscall_name()` to convert system call numbers into names.
@@ -79,6 +83,8 @@ and this project adheres to
   - [#4818](https://github.com/bpftrace/bpftrace/pull/4818)
 - Warn on all discarded expressions
   - [#4836](https://github.com/bpftrace/bpftrace/pull/4836)
+- Stabilize map declarations (remove 'unstable_map_decl' flag)
+  - [#5005](https://github.com/bpftrace/bpftrace/pull/5005)
 #### Deprecated
 - `while` is now deprecated in favor of range-based for loops
   - [#4886](https://github.com/bpftrace/bpftrace/pull/4886)
@@ -86,6 +92,8 @@ and this project adheres to
 - Drop support for LLVM 16
   - [#4534](https://github.com/bpftrace/bpftrace/pull/4534)
 #### Fixed
+- Fix interval probe attachment when CPU 0 is offline
+  - [#4987](https://github.com/bpftrace/bpftrace/pull/4987)
 - Respect `missing_probes` config for bad `args` if the probe will be pruned
   - [#4915](https://github.com/bpftrace/bpftrace/pull/4915)
 - Improved tuple binop comparison

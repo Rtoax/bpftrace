@@ -28,13 +28,13 @@
 #include "ast/passes/parser.h"
 #include "ast/passes/pid_filter_pass.h"
 #include "ast/passes/portability_analyser.h"
+#include "ast/passes/pre_type_check.h"
 #include "ast/passes/printer.h"
 #include "ast/passes/recursion_check.h"
 #include "ast/passes/resource_analyser.h"
 #include "ast/passes/type_checker.h"
 #include "ast/passes/type_resolver.h"
 #include "ast/passes/type_system.h"
-#include "ast/passes/variable_precheck.h"
 #include "benchmark.h"
 #include "bpffeature.h"
 #include "bpftrace.h"
@@ -47,13 +47,13 @@
 #include "output/buffer_mode.h"
 #include "probe_matcher.h"
 #include "run_bpftrace.h"
+#include "symbols/kernel.h"
+#include "symbols/user.h"
 #include "util/env.h"
 #include "util/int_parser.h"
-#include "util/kernel.h"
 #include "util/proc.h"
 #include "util/strings.h"
 #include "util/temp.h"
-#include "util/user.h"
 #include "version.h"
 
 using namespace bpftrace;
@@ -95,6 +95,7 @@ enum Options {
   MODE,
   OUTPUT,
   PID,
+  PROBE_FILTER,
   QUIET,
   TEST, // Alias for --mode=test.
   UNSAFE,
@@ -144,6 +145,8 @@ void usage(std::ostream& out)
   out << "                   ('codegen', 'compiler-bench', 'bench', 'test', 'format')" << std::endl;
   out << "    --test         run all test: probes (same as --mode test)" << std::endl;
   out << "    --bench        run all bench: probes (same as --mode bench)" << std::endl;
+  out << "    --probe-filter REGEX" << std::endl;
+  out << "                   only run probes whose name matches REGEX" << std::endl;
   out << std::endl;
   out << "TROUBLESHOOTING OPTIONS:" << std::endl;
   out << "    -v, --verbose           verbose messages" << std::endl;
@@ -295,7 +298,7 @@ std::vector<std::string> extra_flags(
   struct utsname utsname;
   std::vector<std::string> extra_flags;
   uname(&utsname);
-  bool found_kernel_headers = util::get_kernel_dirs(utsname, ksrc, kobj);
+  bool found_kernel_headers = symbols::get_kernel_dirs(utsname, ksrc, kobj);
 
   if (found_kernel_headers)
     extra_flags = get_kernel_cflags(
@@ -338,13 +341,14 @@ struct Args {
   std::vector<std::string> params;
   std::vector<std::string> debug_stages;
   std::vector<std::string> named_params;
+  std::string probe_filter;
 };
 
 void CreateDynamicPasses(std::function<void(ast::Pass&& pass)> add)
 {
   add(ast::CreateClangBuildPass());
   add(ast::CreateTypeSystemPass());
-  add(ast::CreateVariablePreCheckPass());
+  add(ast::CreatePreTypeCheckPass());
   add(ast::CreateTypeResolverPass());
   add(ast::CreateTypeCheckerPass());
   add(ast::CreateResourcePass());
@@ -355,7 +359,7 @@ void CreateAotPasses(std::function<void(ast::Pass&& pass)> add)
   add(ast::CreatePortabilityPass());
   add(ast::CreateClangBuildPass());
   add(ast::CreateTypeSystemPass());
-  add(ast::CreateVariablePreCheckPass());
+  add(ast::CreatePreTypeCheckPass());
   add(ast::CreateTypeResolverPass());
   add(ast::CreateTypeCheckerPass());
   add(ast::CreateResourcePass());
@@ -465,6 +469,10 @@ Args parse_args(int argc, char* argv[])
             .has_arg = required_argument,
             .flag = nullptr,
             .val = Options::PID },
+    option{ .name = "probe-filter",
+            .has_arg = required_argument,
+            .flag = nullptr,
+            .val = Options::PROBE_FILTER },
     option{ .name = "quiet",
             .has_arg = no_argument,
             .flag = nullptr,
@@ -623,6 +631,9 @@ Args parse_args(int argc, char* argv[])
       case 'p':
       case Options::PID:
         args.pid_str = optarg;
+        break;
+      case Options::PROBE_FILTER:
+        args.probe_filter = optarg;
         break;
       case 'I':
         args.include_dirs.emplace_back(optarg);
@@ -785,13 +796,13 @@ int main(int argc, char* argv[])
   BPFtrace bpftrace(args.no_feature, std::move(config));
 
   // Create function info objects for probe matching and pass state.
-  auto kernel_func_info = util::KernelFunctionInfoImpl::open();
+  auto kernel_func_info = symbols::KernelInfoImpl::open();
   if (!kernel_func_info) {
     LOG(ERROR) << "Failed to open kernel function info: "
                << kernel_func_info.takeError();
     return 1;
   }
-  util::UserFunctionInfoImpl user_func_info;
+  symbols::UserInfoImpl user_func_info;
   ast::FunctionInfo func_info_state(*kernel_func_info, user_func_info);
 
   bpftrace.usdt_file_activation_ = args.usdt_file_activation;
@@ -801,6 +812,7 @@ int main(int argc, char* argv[])
   bpftrace.delta_taitime_ = get_delta_taitime();
   bpftrace.run_tests_ = args.mode == Mode::BPF_TEST;
   bpftrace.run_benchmarks_ = args.mode == Mode::BPF_BENCHMARK;
+  bpftrace.probe_filter_ = args.probe_filter;
 
   if (!args.pid_str.empty()) {
     auto maybe_pid = util::to_uint(args.pid_str);
