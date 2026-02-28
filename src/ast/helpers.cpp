@@ -36,4 +36,11 @@ bool is_type_name(std::string_view str)
          str.starts_with("enum ");
 }
 
+bool has_type_name(std::string_view str)
+{
+  return str.find("struct ") != std::string_view::npos ||
+         str.find("union ") != std::string_view::npos ||
+         str.find("enum ") != std::string_view::npos;
+}
+
 } // namespace bpftrace

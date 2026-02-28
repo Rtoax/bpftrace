@@ -783,6 +783,66 @@ bool is_colorize()
   }
 }
 
+void list_struct(BPFtrace& bpftrace,
+                 std::string& search,
+                 symbols::KernelInfo& kernel_func_info,
+                 symbols::UserInfoImpl& user_func_info)
+{
+  bpftrace.btf_->load_module_btfs(kernel_func_info.get_modules());
+
+  ProbeMatcher probe_matcher(&bpftrace, kernel_func_info, user_func_info);
+  for (const auto& s : probe_matcher.get_structs_for_listing(probe)) {
+    std::cout << s << std::endl;
+  }
+}
+
+void list_probes(BPFtrace& bpftrace,
+                 std::string& search,
+                 symbols::KernelInfo& kernel_func_info,
+                 symbols::UserInfoImpl& user_func_info)
+{
+  std::vector<std::string> probes;
+
+  if (search.find(",") == std::string::npos) {
+    probes.push_back(search);
+  } else {
+    probes = util::split_string(search, ',');
+  }
+
+  for (auto& probe : probes) {
+    bool is_search_a_type = is_type_name(probe);
+
+    // Ensure that BTF is loaded for all listing.
+    auto parts = util::split_string(probe, ':');
+    if (is_search_a_type || parts.empty() || parts.size() < 3) {
+      bpftrace.btf_->load_module_btfs(kernel_func_info.get_modules());
+    } else {
+      bpftrace.btf_->load_module_btfs(kernel_func_info.get_modules(parts[1]));
+    }
+
+    // Use ProbeMatcher directly to list probes matching the search pattern.
+    ProbeMatcher probe_matcher(&bpftrace, kernel_func_info, user_func_info);
+    if (is_search_a_type) {
+      for (const auto& s : probe_matcher.get_structs_for_listing(probe)) {
+        std::cout << s << std::endl;
+      }
+    } else {
+      // For patterns without a colon (like "*do_nanosleep*"), treat as
+      // wildcard probe type with the pattern as function match.
+      std::string search = probe;
+      if (search.empty()) {
+        search = "*:*";
+      } else if (search.find(':') == std::string::npos) {
+        search = "*:" + search;
+      }
+      for (const auto& probe :
+           probe_matcher.get_probes_for_listing(search, bpftrace.pid())) {
+        std::cout << probe << std::endl;
+      }
+    }
+  }
+}
+
 int main(int argc, char* argv[])
 {
   Log::get().set_colorize(is_colorize());
@@ -875,37 +935,13 @@ int main(int argc, char* argv[])
           << args.search << "\' as a search pattern.";
     }
 
-    bool is_search_a_type = is_type_name(args.search);
-
-    // Ensure that BTF is loaded for all listing.
-    auto parts = util::split_string(args.search, ':');
-    if (is_search_a_type || parts.empty() || parts.size() < 3) {
-      bpftrace.btf_->load_module_btfs(kernel_func_info->get_modules());
-    } else {
-      bpftrace.btf_->load_module_btfs(kernel_func_info->get_modules(parts[1]));
+    if (has_type_name(args.search)) {
+      if (!is_type_name(args.search)) {
+      }
+      list_struct(bpftrace, args.search, *kernel_func_info, user_func_info);
     }
 
-    // Use ProbeMatcher directly to list probes matching the search pattern.
-    ProbeMatcher probe_matcher(&bpftrace, *kernel_func_info, user_func_info);
-    if (is_search_a_type) {
-      for (const auto& s : probe_matcher.get_structs_for_listing(args.search)) {
-        std::cout << s << std::endl;
-      }
-    } else {
-      // For patterns without a colon (like "*do_nanosleep*"), treat as
-      // wildcard probe type with the pattern as function match.
-      std::string search = args.search;
-      if (search.empty()) {
-        search = "*:*";
-      } else if (search.find(':') == std::string::npos) {
-        search = "*:" + search;
-      }
-      for (const auto& probe :
-           probe_matcher.get_probes_for_listing(search, bpftrace.pid())) {
-        std::cout << probe << std::endl;
-      }
-    }
-
+    list_probes(bpftrace, args.search, *kernel_func_info, user_func_info);
     return 0;
   }
 
