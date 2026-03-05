@@ -9,6 +9,15 @@
 #include "errors.h"
 #include "syscall.h"
 
+typedef char str[64];
+
+struct {
+  __uint(type, 3/* BPF_MAP_TYPE_PROG_ARRAY */);
+  __uint(max_entries, 100);
+  __type(key, __u32);
+ __array(values, str);
+} map_errors SEC(".map");
+
 extern int bpf_strnlen(const char *s__ign, size_t count) __ksym __weak;
 
 long __bpf_strnlen(const char *ptr, size_t max_size)
