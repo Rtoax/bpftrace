@@ -1,0 +1,225 @@
+From 1ff4ace23a1aa104d4d24dc4f953b8b820063f02 Mon Sep 17 00:00:00 2001
+From: Rong Tao <rongtao@cestc.cn>
+Date: Mon, 23 Mar 2026 16:04:59 +0800
+Subject: [PATCH] debug bpftrace
+
+Signed-off-by: Rong Tao <rongtao@cestc.cn>
+---
+ src/Makefile |  2 +-
+ src/libbpf.c | 57 +++++++++++++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 51 insertions(+), 8 deletions(-)
+
+diff --git a/src/Makefile b/src/Makefile
+index df36775..c092b42 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -35,7 +35,7 @@ ALL_CFLAGS := $(INCLUDES)
+ 
+ SHARED_CFLAGS += -fPIC -fvisibility=hidden -DSHARED
+ 
+-CFLAGS ?= -g -O2 -Werror -Wall -std=gnu89
++CFLAGS ?= -g -Werror -Wall -std=gnu89
+ ALL_CFLAGS += $(CFLAGS) 						\
+ 	      -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64		\
+ 	      -Wno-unknown-warning-option -Wno-format-overflow		\
+diff --git a/src/libbpf.c b/src/libbpf.c
+index fe4fc54..2cef317 100644
+--- a/src/libbpf.c
++++ b/src/libbpf.c
+@@ -73,6 +73,8 @@
+ 
+ #define __printf(a, b)	__attribute__((format(printf, a, b)))
+ 
++#define debug(fmt...)	printf("%s:%d ", __func__, __LINE__);printf(fmt);
++
+ static struct bpf_map *bpf_object__add_map(struct bpf_object *obj);
+ static bool prog_is_subprog(const struct bpf_object *obj, const struct bpf_program *prog);
+ static int map_set_def_max_entries(struct bpf_map *map);
+@@ -4706,6 +4708,8 @@ bpf_object__collect_prog_relos(struct bpf_object *obj, Elf64_Shdr *shdr, Elf_Dat
+ 	Elf64_Sym *sym;
+ 	Elf64_Rel *rel;
+ 
++	debug("\n");
++
+ 	if (sec_idx >= obj->efile.sec_cnt)
+ 		return -EINVAL;
+ 
+@@ -4783,6 +4787,7 @@ bpf_object__collect_prog_relos(struct bpf_object *obj, Elf64_Shdr *shdr, Elf_Dat
+ 		insn_idx -= prog->sec_insn_off;
+ 		err = bpf_program__record_reloc(prog, &relos[prog->nr_reloc],
+ 						insn_idx, sym_name, sym, rel);
++		debug("\n");
+ 		if (err)
+ 			return err;
+ 
+@@ -7213,10 +7218,13 @@ static int bpf_object__collect_map_relos(struct bpf_object *obj,
+ 	if (!sec)
+ 		return -EINVAL;
+ 
++	debug("\n");
++
+ 	nrels = shdr->sh_size / shdr->sh_entsize;
+ 	for (i = 0; i < nrels; i++) {
+ 		rel = elf_rel_by_idx(data, i);
+ 		if (!rel) {
++			debug("\n");
+ 			pr_warn(".maps relo #%d: failed to get ELF relo\n", i);
+ 			return -LIBBPF_ERRNO__FORMAT;
+ 		}
+@@ -7244,7 +7252,7 @@ static int bpf_object__collect_map_relos(struct bpf_object *obj,
+ 				break;
+ 		}
+ 		if (j == obj->nr_maps) {
+-			pr_warn(".maps relo #%d: cannot find map '%s' at rel->r_offset %zu\n",
++			debug(".maps relo #%d: cannot find map '%s' at rel->r_offset %zu\n",
+ 				i, name, (size_t)rel->r_offset);
+ 			return -EINVAL;
+ 		}
+@@ -7252,9 +7260,11 @@ static int bpf_object__collect_map_relos(struct bpf_object *obj,
+ 		is_map_in_map = bpf_map_type__is_map_in_map(map->def.type);
+ 		is_prog_array = map->def.type == BPF_MAP_TYPE_PROG_ARRAY;
+ 		type = is_map_in_map ? "map" : "prog";
++		debug("\n");
+ 		if (is_map_in_map) {
++			debug("\n");
+ 			if (sym->st_shndx != obj->efile.btf_maps_shndx) {
+-				pr_warn(".maps relo #%d: '%s' isn't a BTF-defined map\n",
++				debug(".maps relo #%d: '%s' isn't a BTF-defined map\n",
+ 					i, name);
+ 				return -LIBBPF_ERRNO__RELOC;
+ 			}
+@@ -7271,6 +7281,7 @@ static int bpf_object__collect_map_relos(struct bpf_object *obj,
+ 				return -ESRCH;
+ 			}
+ 		} else if (is_prog_array) {
++			debug("\n");
+ 			targ_prog = bpf_object__find_program_by_name(obj, name);
+ 			if (!targ_prog) {
+ 				pr_warn(".maps relo #%d: '%s' isn't a valid program reference\n",
+@@ -7280,7 +7291,7 @@ static int bpf_object__collect_map_relos(struct bpf_object *obj,
+ 			if (targ_prog->sec_idx != sym->st_shndx ||
+ 			    targ_prog->sec_insn_off * 8 != sym->st_value ||
+ 			    prog_is_subprog(obj, targ_prog)) {
+-				pr_warn(".maps relo #%d: '%s' isn't an entry-point program\n",
++				debug(".maps relo #%d: '%s' isn't an entry-point program\n",
+ 					i, name);
+ 				return -LIBBPF_ERRNO__RELOC;
+ 			}
+@@ -7331,6 +7342,8 @@ static int bpf_object__collect_relos(struct bpf_object *obj)
+ {
+ 	int i, err;
+ 
++	debug("\n");
++
+ 	for (i = 0; i < obj->efile.sec_cnt; i++) {
+ 		struct elf_sec_desc *sec_desc = &obj->efile.secs[i];
+ 		Elf64_Shdr *shdr;
+@@ -7344,17 +7357,27 @@ static int bpf_object__collect_relos(struct bpf_object *obj)
+ 		data = sec_desc->data;
+ 		idx = shdr->sh_info;
+ 
++		debug("\n");
++
+ 		if (shdr->sh_type != SHT_REL || idx < 0 || idx >= obj->efile.sec_cnt) {
++			debug("\n");
+ 			pr_warn("internal error at %d\n", __LINE__);
+ 			return -LIBBPF_ERRNO__INTERNAL;
+ 		}
+ 
+-		if (obj->efile.secs[idx].sec_type == SEC_ST_OPS)
++		if (obj->efile.secs[idx].sec_type == SEC_ST_OPS) {
+ 			err = bpf_object__collect_st_ops_relos(obj, shdr, data);
+-		else if (idx == obj->efile.btf_maps_shndx)
++			debug("err = %d\n", err);
++		} else if (idx == obj->efile.btf_maps_shndx) {
+ 			err = bpf_object__collect_map_relos(obj, shdr, data);
+-		else
++			debug("err = %d\n", err);
++		} else {
+ 			err = bpf_object__collect_prog_relos(obj, shdr, data);
++			debug("err = %d\n", err);
++		}
++
++		debug("err = %d\n", err);
++
+ 		if (err)
+ 			return err;
+ 	}
+@@ -7959,11 +7982,13 @@ static int bpf_object_prepare_progs(struct bpf_object *obj)
+ 
+ static const struct bpf_sec_def *find_sec_def(const char *sec_name);
+ 
+-static int bpf_object_init_progs(struct bpf_object *obj, const struct bpf_object_open_opts *opts)
++int bpf_object_init_progs(struct bpf_object *obj, const struct bpf_object_open_opts *opts)
+ {
+ 	struct bpf_program *prog;
+ 	int err;
+ 
++	printf("##################\n");
++
+ 	bpf_object__for_each_program(prog, obj) {
+ 		prog->sec_def = find_sec_def(prog->sec_name);
+ 		if (!prog->sec_def) {
+@@ -7973,21 +7998,27 @@ static int bpf_object_init_progs(struct bpf_object *obj, const struct bpf_object
+ 			continue;
+ 		}
+ 
++		printf("------------prog %s, %s\n", prog->name, prog->sec_name);
++
+ 		prog->type = prog->sec_def->prog_type;
+ 		prog->expected_attach_type = prog->sec_def->expected_attach_type;
+ 
++		printf("============prog %s, %s\n", prog->name, prog->sec_name);
++
+ 		/* sec_def can have custom callback which should be called
+ 		 * after bpf_program is initialized to adjust its properties
+ 		 */
+ 		if (prog->sec_def->prog_setup_fn) {
+ 			err = prog->sec_def->prog_setup_fn(prog, prog->sec_def->cookie);
+ 			if (err < 0) {
++				printf("xxxxxxxxxxxxxxx prog %s, %s\n", prog->name, prog->sec_name);
+ 				pr_warn("prog '%s': failed to initialize: %s\n",
+ 					prog->name, errstr(err));
+ 				return err;
+ 			}
+ 		}
+ 	}
++	printf("################## err=%d\n", err);
+ 
+ 	return 0;
+ }
+@@ -8080,19 +8111,31 @@ static struct bpf_object *bpf_object_open(const char *path, const void *obj_buf,
+ 	}
+ 
+ 	err = bpf_object__elf_init(obj);
++	debug("err = %d\n", err);
+ 	err = err ? : bpf_object__elf_collect(obj);
++	debug("err = %d\n", err);
+ 	err = err ? : bpf_object__collect_externs(obj);
++	debug("err = %d\n", err);
+ 	err = err ? : bpf_object_fixup_btf(obj);
++	debug("err = %d\n", err);
+ 	err = err ? : bpf_object__init_maps(obj, opts);
++	debug("err = %d\n", err);
+ 	err = err ? : bpf_object_init_progs(obj, opts);
++	debug("err = %d\n", err);
+ 	err = err ? : bpf_object__collect_relos(obj);
++	debug("err = %d\n", err);
+ 	if (err)
+ 		goto out;
+ 
++	debug("\n");
++
+ 	bpf_object__elf_finish(obj);
+ 
+ 	return obj;
++
++	debug("\n");
+ out:
++	debug("\n");
+ 	bpf_object__close(obj);
+ 	return ERR_PTR(err);
+ }
+-- 
+2.43.0
+

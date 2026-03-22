@@ -1,0 +1,25 @@
+#!/usr/bin/env bpftrace
+
+begin {
+  @maperror[0] = "Success";
+  @maperror[1] = "Operation not permitted";
+}
+
+begin {
+  printf("1\n");
+}
+
+begin {
+  printf("2\n");
+}
+
+tracepoint:syscalls:sys_exit_openat,
+tracepoint:syscalls:sys_exit_openat2
+{
+  $ret = args.ret;
+  $fd = ($ret >= 0) ? $ret : (-1);
+  $errno = ($ret >= 0) ? 0 : (-$ret);
+  //printf("%-6d %-16s %4d %3s\n", pid, comm, $fd, strerror($errno, @maperror));
+  printf("%-6d %-16s %4d %3s\n", pid, comm, $fd, syscall_name($errno));
+  //@[strerror($errno)] = count();
+}

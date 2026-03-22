@@ -144,8 +144,14 @@ macro strcontains(haystack, needle)
 //   print(strerror(EPERM));
 // }
 // ```
-macro strerror(errno)
+macro strerror(errno, @maperror)
 {
+  //if (has_key(@maperror, errno)) {
+  //  @maperror[errno]
+  //} else {
+  //  "Unknown error"
+  //}
+
   import "stdlib/strings/strings.bpf.c";
   let $v : string[64];
   __strerror((int32)errno, &$v);

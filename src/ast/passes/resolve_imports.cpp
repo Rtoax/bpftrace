@@ -234,6 +234,9 @@ Result<OK> Imports::import_any(Node &node,
 {
   // Import supported extensions.
   std::filesystem::path path(name);
+
+  std::cout << "Import " << name << std::endl;
+
   if (path.extension() == ".bt") {
     return import_script(
         node, *this, name, std::string(data), paths, scripts, true);

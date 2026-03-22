@@ -1,6 +1,7 @@
 #define __KERNEL__
 #include <asm/errno.h>
 #include <asm/posix_types.h>
+#include <linux/bpf.h>
 #include <linux/errno.h>
 #include <linux/types.h>
 #include <stddef.h>
@@ -8,6 +9,17 @@
 #include <bpf/bpf_helpers.h>
 #include "errors.h"
 #include "syscall.h"
+
+#if 0
+struct map_str {
+  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+  __type(key, __u32);
+  __type(value, err_str);
+  __uint(max_entries, 128);
+};
+
+extern struct map_str map_strerrors SEC(".map");
+#endif
 
 extern int bpf_strnlen(const char *s__ign, size_t count) __ksym __weak;
 
@@ -70,11 +82,25 @@ int __strerror(int errno, err_str *out) {
   if (errno < 0) {
     errno = -errno;
   }
+#if 0 // works fine
+  __builtin_memcpy(out, &unknown_error, sizeof(*out));
+#endif
+#if 0
+  err_str *str = bpf_map_lookup_elem(&map_strerrors, &errno);
+  if (!str) {
+    bpf_map_update_elem(&map_strerrors, &errno, &unknown_error, BPF_NOEXIST);
+  }
+  //str = bpf_map_lookup_elem(&map_strerrors, &errno);
+  //__builtin_memcpy(out, str, sizeof(*out));
+  __builtin_memcpy(out, &unknown_error, sizeof(*out));
+#endif
+#if 1 /* Looks like the BPF stack limit is exceeded. */
   if (errno >= 0 && errno <= EHWPOISON) {
     __builtin_memcpy(out, &errors[errno], sizeof(*out));
   } else {
     __builtin_memcpy(out, &unknown_error, sizeof(*out));
   }
+#endif
   return 0;
 }
 
