@@ -1288,6 +1288,19 @@ bpftrace doesn’t read past the length of the shortest string.
 The use of the `==` and `!=` operators is recommended over calling `strncmp` directly.
 
 
+### strsignal
+- `string strsignal(int sig)`
+
+Convert signal code to string.
+
+```
+#include <signal.h>
+begin {
+  print(strsignal(SIGINT));
+}
+```
+
+
 ### strstr
 - `int64 strstr(string haystack, string needle)`
 

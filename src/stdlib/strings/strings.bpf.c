@@ -7,6 +7,7 @@
 
 #include <bpf/bpf_helpers.h>
 #include "errors.h"
+#include "signal.h"
 #include "syscall.h"
 
 extern int bpf_strnlen(const char *s__ign, size_t count) __ksym __weak;
@@ -89,6 +90,19 @@ int __strerror(int errno, err_str *out) {
     }
   } else {
     __builtin_memcpy(out, &unknown_error, sizeof(*out));
+  }
+  return 0;
+}
+
+int __strsignal(int sig, sig_str *out) {
+  if (sig >= 0 && sig <= 64) {
+    if (signals[sig][0] == '\0') {
+      __builtin_memcpy(out, &unknown_signal, sizeof(*out));
+    } else {
+      __builtin_memcpy(out, &signals[sig], sizeof(*out));
+    }
+  } else {
+    __builtin_memcpy(out, &unknown_signal, sizeof(*out));
   }
   return 0;
 }

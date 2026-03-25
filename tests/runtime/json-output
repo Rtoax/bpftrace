@@ -121,6 +121,10 @@ NAME strerror
 RUN {{BPFTRACE}} -f json -e 'begin { print((strerror(7)));  }'
 EXPECT {"type": "value", "data": "Argument list too long"}
 
+NAME strsignal
+RUN {{BPFTRACE}} -f json -e 'begin { print((strsignal(31)));  }'
+EXPECT {"type": "value", "data": "Bad system call"}
+
 # Careful with '[' and ']', they are read by the test engine as a regex
 # character class, so make sure to escape them.
 NAME tuple

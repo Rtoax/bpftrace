@@ -10,6 +10,8 @@ and this project adheres to
 
 #### Breaking Changes
 #### Added
+- stdlib: add strsignal().
+  - [#5098](https://github.com/bpftrace/bpftrace/pull/5098)
 - Ternary operator supports an empty second operand.
   - [#5077](https://github.com/bpftrace/bpftrace/pull/5077)
 - Add `uprobe` support for source location attach points.

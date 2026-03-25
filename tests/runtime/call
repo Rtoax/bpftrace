@@ -692,6 +692,10 @@ NAME strerror
 RUN {{BPFTRACE}} --include "errno.h" -e 'begin { print(strerror(EPERM));  }'
 EXPECT Operation not permitted
 
+NAME strsignal
+RUN {{BPFTRACE}} -e 'begin { print(strsignal(1)); }'
+EXPECT Hangup
+
 NAME bswap_int64
 RUN {{BPFTRACE}} -e 'begin { printf("%llx", bswap(0x1122334455667788));  }'
 EXPECT 8877665544332211
