@@ -94,12 +94,7 @@ int __strerror(int errno, err_str *out) {
 }
 
 int __syscall_name(int n, syscall_str *out) {
-  if (n >= 0 && n < NR_SYSCALL_ALIGN_BITS) {
-    // To resolve the verifier's complaint that the off range is too large,
-    // resulting in "possible" access beyond the range of syscall_names[],
-    // we use a constant value to constrain n to help the verifier.
-    n &= NR_SYSCALL_ALIGN_BITS;
-
+  if (n >= 0 && n < nr_syscall) {
     // System call numbers are not sequential, so when syscall_names is empty,
     // we return "unknown system call".
     if (syscall_names[n][0] == '\0') {
