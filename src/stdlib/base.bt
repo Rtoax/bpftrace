@@ -910,7 +910,11 @@ macro write_user(dst, src, len)
 // Get the pid of the parent process for the passed task or the current task if called without arguments.
 macro ppid(task)
 {
-  task.real_parent.pid
+  if (pid == tid) {
+    task.real_parent.pid
+  } else {
+    task.group_leader.pid
+  }
 }
 
 macro ppid()
@@ -920,10 +924,14 @@ macro ppid()
 
 // :variant string pcomm()
 // :variant string pcomm(struct task_struct * task)
-// Get the name of the process for the passed task or the current task if called without arguments. This is an alias for (task->group_leader->comm).
+// Get the name of the parent process for the passed task or the current task if called without arguments.
 macro pcomm(task)
 {
-  task.group_leader.comm
+  if (pid == tid) {
+    task.real_parent.comm
+  } else {
+    task.group_leader.comm
+  }
 }
 
 macro pcomm()
