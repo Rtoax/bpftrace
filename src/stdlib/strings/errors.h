@@ -2,6 +2,8 @@
 
 #include <linux/types.h>
 
+#define unknown_error "Unknown error"
+
 typedef char err_str[64];
 
 static err_str errors[] = {
@@ -46,7 +48,7 @@ static err_str errors[] = {
   [ENOSYS] = "Invalid system call number",
   [ENOTEMPTY] = "Directory not empty",
   [ELOOP] = "Too many symbolic links encountered",
-  // errno 41 does not exist
+  [41] = unknown_error,
   [ENOMSG] = "No message of desired type",
   [EIDRM] = "Identifier removed",
   [ECHRNG] = "Channel number out of range",
@@ -63,7 +65,7 @@ static err_str errors[] = {
   [ENOANO] = "No anode",
   [EBADRQC] = "Invalid request code",
   [EBADSLT] = "Invalid slot",
-  // errno 58 does not exist
+  [58] = unknown_error,
   [EBFONT] = "Bad font file format",
   [ENOSTR] = "Device not a stream",
   [ENODATA] = "No data available",
@@ -139,6 +141,5 @@ static err_str errors[] = {
   [ENOTRECOVERABLE] = "State not recoverable",
   [ERFKILL] = "Operation not possible due to RF-kill",
   [EHWPOISON] = "Memory page has hardware error",
+  [EHWPOISON + 1] = unknown_error,
 };
-
-static err_str unknown_error = "Unknown error";
