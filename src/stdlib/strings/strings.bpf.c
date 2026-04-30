@@ -71,7 +71,8 @@ int __strerror(int errno, err_str *out) {
   if (errno < 0) {
     errno = -errno;
   }
-  if (errno >= 0 && errno <= EHWPOISON) {
+  if (errno >= 0 && errno < NR_ERROR_ALIGN_BITS) {
+    errno &= NR_ERROR_ALIGN_BITS;
     // The array 'errors' is not fully populated, skip the empty 'errno'.
     //
     // There is another benefit to doing this. BPF 512-byte stack limit.
@@ -95,7 +96,8 @@ int __strerror(int errno, err_str *out) {
 }
 
 void __signal_name(int sig, sig_str *out) {
-  if (sig >= 0 && sig <= 64) {
+  if (sig >= 0 && sig < NR_SIGNAL_ALIGN_BITS) {
+    sig &= NR_SIGNAL_ALIGN_BITS;
     if (signals[sig][0] == '\0') {
       __builtin_memcpy(out, &unknown_signal, sizeof(*out));
     } else {

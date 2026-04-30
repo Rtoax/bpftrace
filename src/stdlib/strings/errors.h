@@ -2,6 +2,10 @@
 
 #include <linux/types.h>
 
+// A constant whose low-order bits are all 1 and is greater than the maximum
+// error number.
+#define NR_ERROR_ALIGN_BITS 0xff
+
 typedef char err_str[64];
 
 static err_str errors[] = {
@@ -139,6 +143,7 @@ static err_str errors[] = {
   [ENOTRECOVERABLE] = "State not recoverable",
   [ERFKILL] = "Operation not possible due to RF-kill",
   [EHWPOISON] = "Memory page has hardware error",
+  [NR_ERROR_ALIGN_BITS] = "",
 };
 
 static err_str unknown_error = "Unknown error";

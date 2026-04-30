@@ -1,5 +1,9 @@
 #pragma once
 
+// A constant whose low-order bits are all 1 and is greater than the maximum
+// signal number.
+#define NR_SIGNAL_ALIGN_BITS 0xff
+
 typedef char sig_str[64];
 
 // See strsignal(3)
@@ -69,6 +73,7 @@ static sig_str signals[] = {
   [62] = "Real-time signal 28",
   [63] = "Real-time signal 29",
   [64] = "Real-time signal 30", // SIGRTMAX
+  [NR_SIGNAL_ALIGN_BITS] = "",
 };
 
 static sig_str unknown_signal = "N/A";
