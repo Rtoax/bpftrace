@@ -1829,7 +1829,7 @@ TEST(Parser, cast_precedence)
 
 TEST(Parser, cast_enum)
 {
-  test("enum Foo { ONE = 1 } kprobe:sys_read { (enum Foo)1; }",
+  test("enum Foo { ONE = 1 }; kprobe:sys_read { (enum Foo)1; }",
        Program()
            .WithCStatements({ CStatement("enum Foo { ONE = 1 };") })
            .WithProbe(
@@ -1970,7 +1970,7 @@ TEST(Parser, sizeof_type)
 
 TEST(Parser, offsetof_type)
 {
-  test("struct Foo { int x; } begin { offsetof(struct Foo, x); }",
+  test("struct Foo { int x; }; begin { offsetof(struct Foo, x); }",
        Program()
            .WithCStatements({ CStatement("struct Foo { int x; };") })
            .WithProbe(
@@ -1978,7 +1978,7 @@ TEST(Parser, offsetof_type)
                      { ExprStatement(Offsetof(
                          ParsedType(ast::ParsedType::Kind::Struct, "Foo"),
                          { "x" })) })));
-  test("struct Foo { struct Bar { int x; } bar; } "
+  test("struct Foo { struct Bar { int x; } bar; }; "
        "begin { offsetof(struct Foo, bar.x); }",
        Program()
            .WithCStatements(
@@ -1988,15 +1988,15 @@ TEST(Parser, offsetof_type)
                      { ExprStatement(Offsetof(
                          ParsedType(ast::ParsedType::Kind::Struct, "Foo"),
                          { "bar", "x" })) })));
-  test_parse_failure("struct Foo { struct Bar { int x; } *bar; } "
+  test_parse_failure("struct Foo { struct Bar { int x; } *bar; }; "
                      "begin { offsetof(struct Foo, bar->x); }",
                      R"(
-stdin:1:76-77: ERROR: syntax: expected ')'
-struct Foo { struct Bar { int x; } *bar; } begin { offsetof(struct Foo, bar->x); }
-                                                                           ~
-stdin:1:79-80: ERROR: syntax: expected ';'
-struct Foo { struct Bar { int x; } *bar; } begin { offsetof(struct Foo, bar->x); }
-                                                                              ~
+stdin:1:77-78: ERROR: syntax: expected ')'
+struct Foo { struct Bar { int x; } *bar; }; begin { offsetof(struct Foo, bar->x); }
+                                                                            ~
+stdin:1:80-81: ERROR: syntax: expected ';'
+struct Foo { struct Bar { int x; } *bar; }; begin { offsetof(struct Foo, bar->x); }
+                                                                               ~
 )");
 }
 
@@ -2021,7 +2021,7 @@ TEST(Parser, offsetof_expression)
 
 TEST(Parser, offsetof_builtin_type)
 {
-  test("struct Foo { timestamp x; } begin { offsetof(struct Foo, timestamp); "
+  test("struct Foo { timestamp x; }: begin { offsetof(struct Foo, timestamp); "
        "}",
        Program()
            .WithCStatements({ CStatement("struct Foo { timestamp x; };") })
@@ -2173,7 +2173,7 @@ TEST(Parser, array_access)
 
 TEST(Parser, cstruct)
 {
-  test("struct Foo { int x, y; char *str; } kprobe:sys_read { 1; }",
+  test("struct Foo { int x, y; char *str; }; kprobe:sys_read { 1; }",
        Program()
            .WithCStatements(
                { CStatement("struct Foo { int x, y; char *str; };") })
@@ -2187,7 +2187,7 @@ TEST(Parser, cstruct)
            .WithProbe(
                Probe({ "kprobe:sys_read" }, { ExprStatement(Integer(1)) })));
 
-  test("struct Foo { struct { int x; } bar; } kprobe:sys_read { 1; }",
+  test("struct Foo { struct { int x; } bar; }; kprobe:sys_read { 1; }",
        Program()
            .WithCStatements(
                { CStatement("struct Foo { struct { int x; } bar; };") })
@@ -2195,7 +2195,7 @@ TEST(Parser, cstruct)
                Probe({ "kprobe:sys_read" }, { ExprStatement(Integer(1)) })));
 
   // C struct with attribute
-  test("struct Foo __attribute__((packed)) { int x; } kprobe:sys_read { 1; }",
+  test("struct Foo __attribute__((packed)) { int x; }; kprobe:sys_read { 1; }",
        Program()
            .WithCStatements(
                { CStatement("struct Foo __attribute__((packed)) { int x; };") })
@@ -2203,7 +2203,7 @@ TEST(Parser, cstruct)
                Probe({ "kprobe:sys_read" }, { ExprStatement(Integer(1)) })));
 
   // Block comment containing braces inside C definition
-  test("struct Foo { int x; /* } */ int y; } kprobe:sys_read { 1; }",
+  test("struct Foo { int x; /* } */ int y; }; kprobe:sys_read { 1; }",
        Program()
            .WithCStatements(
                { CStatement("struct Foo { int x; /* } */ int y; };") })
@@ -2211,7 +2211,7 @@ TEST(Parser, cstruct)
                Probe({ "kprobe:sys_read" }, { ExprStatement(Integer(1)) })));
 
   // Line comment containing brace inside C definition
-  test("struct Foo {\n  int x; // }\n  int y;\n} kprobe:sys_read { 1; }",
+  test("struct Foo {\n  int x; // }\n  int y;\n}; kprobe:sys_read { 1; }",
        Program()
            .WithCStatements(
                { CStatement("struct Foo {\n  int x; // }\n  int y;\n};") })
@@ -3293,7 +3293,7 @@ TEST(Parser, struct_save_nested)
       int z;
     } baz;
   } bar;
-} i:ms:100 { $s = (struct Foo)1; })",
+}; i:ms:100 { $s = (struct Foo)1; })",
        Program()
            .WithCStatements({ CStatement(R"(struct Foo {
   int x;

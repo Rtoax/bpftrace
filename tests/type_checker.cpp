@@ -467,11 +467,11 @@ TEST_F(TypeCheckerTest, ternary_expressions)
   test("kprobe:f { pid < 10000 ? printf(\"lo\") : exit() }");
   test(R"(kprobe:f { @x = pid < 10000 ? printf("lo") : cat("/proc/uptime") })",
        Error{});
-  test("struct Foo { int x; } kprobe:f { true ? (struct Foo)*arg0 : "
+  test("struct Foo { int x; }; kprobe:f { true ? (struct Foo)*arg0 : "
        "(struct "
        "Foo)*arg1 }",
        Error{});
-  test("struct Foo { int x; } kprobe:f { true ? (struct Foo*)arg0 : "
+  test("struct Foo { int x; }; kprobe:f { true ? (struct Foo*)arg0 : "
        "(struct "
        "Foo*)arg1 }");
   test(
@@ -1329,7 +1329,7 @@ TEST_F(TypeCheckerTest, call_ntop)
   std::string structs = "struct inet { unsigned char "
                         "ipv4[4]; unsigned char "
                         "ipv6[16]; unsigned char "
-                        "invalid[10]; } ";
+                        "invalid[10]; }; ";
 
   test("kprobe:f { ntop(2, arg0); }");
   test("kprobe:f { ntop(arg0); }");
@@ -1370,7 +1370,7 @@ TEST_F(TypeCheckerTest, call_pton)
   test("kprobe:f { $addr_v6 = pton(\":\"); }", Error{});
   test("kprobe:f { $addr_v6 = pton(\"1:1:1:1:1:1:1:1:1\"); }", Error{});
 
-  std::string structs = "struct inet { unsigned char non_literal_string[4]; } ";
+  std::string structs = "struct inet { unsigned char non_literal_string[4]; }; ";
   test("kprobe:f { $addr_v4 = pton(1); }", Error{});
   test(structs + "kprobe:f { $addr_v4 = pton(((struct "
                  "inet*)0)->non_literal_string); }",
@@ -1599,31 +1599,31 @@ TEST_F(TypeCheckerTest, array_access)
   test(R"(begin { $i = -1; $s = "ab"; $a = $s[$i]; })", Error{});
   test("kprobe:f { $s = arg0; @x = $s->y[0];}", Error{});
   test("kprobe:f { $s = 0; @x = $s->y[0];}", Error{});
-  test("struct MyStruct { int y[4]; } "
+  test("struct MyStruct { int y[4]; }; "
        "kprobe:f { $s = (struct MyStruct *) "
        "arg0; @x = $s->y[5];}",
        Error{});
-  test("struct MyStruct { int y[4]; } "
+  test("struct MyStruct { int y[4]; }; "
        "kprobe:f { $s = (struct MyStruct *) "
        "arg0; @x = $s->y[-1];}",
        Error{});
-  test("struct MyStruct { int y[4]; } "
+  test("struct MyStruct { int y[4]; }; "
        "kprobe:f { $s = (struct MyStruct *) "
        "arg0; @x = $s->y[\"0\"];}",
        Error{});
-  test("struct MyStruct { int y[4]; } "
+  test("struct MyStruct { int y[4]; }; "
        "kprobe:f { $s = (struct MyStruct *) "
        "arg0; $idx = (uint32)0; @x = $s->y[$idx];}");
-  test("struct MyStruct { int y[4]; } "
+  test("struct MyStruct { int y[4]; }; "
        "kprobe:f { $s = (struct MyStruct *) "
        "arg0; $idx = -1; @x = $s->y[$idx];}",
        Error{});
   test("kprobe:f { $s = arg0; @x = $s[0]; }", Error{});
-  test("struct MyStruct { void *y; } "
+  test("struct MyStruct { void *y; }; "
        "kprobe:f { $s = (struct MyStruct *) "
        "arg0; @x = $s->y[5];}",
        Error{});
-  auto result = test("struct MyStruct { int y[4]; } "
+  auto result = test("struct MyStruct { int y[4]; }; "
                      "kprobe:f { $s = (struct MyStruct *) "
                      "arg0; @x = $s->y[0];}");
   auto *assignment = result.ast.root->probes.at(0)
@@ -1633,7 +1633,7 @@ TEST_F(TypeCheckerTest, array_access)
             result.type_map.map_value_type(assignment->map_access->map->ident));
 
   result = test("struct MyStruct { int y[4]; "
-                "} kprobe:f { $s = ((struct "
+                "}; kprobe:f { $s = ((struct "
                 "MyStruct *) "
                 "arg0)->y; @x = $s[0];}");
   auto *array_var_assignment = result.ast.root->probes.at(0)
@@ -1643,7 +1643,7 @@ TEST_F(TypeCheckerTest, array_access)
             result.type_map.type(array_var_assignment->var()));
 
   result = test("struct MyStruct { int y[4]; "
-                "} kprobe:f { @a[0] = "
+                "}; kprobe:f { @a[0] = "
                 "((struct MyStruct *) "
                 "arg0)->y; @x = @a[0][0];}");
   auto *array_map_assignment = result.ast.root->probes.at(0)
@@ -1664,35 +1664,35 @@ TEST_F(TypeCheckerTest, array_access)
   auto bpftrace = get_mock_bpftrace();
   bpftrace->add_param("0");
   bpftrace->add_param("hello");
-  test("struct MyStruct { int y[4]; } "
+  test("struct MyStruct { int y[4]; }; "
        "kprobe:f { $s = ((struct MyStruct "
        "*)arg0)->y[$1]; }",
        Mock{ *bpftrace });
-  test("struct MyStruct { int y[4]; } "
+  test("struct MyStruct { int y[4]; }; "
        "kprobe:f { $s = ((struct MyStruct "
        "*)arg0)->y[$2]; }",
        Mock{ *bpftrace },
        Error{});
 
-  test("struct MyStruct { int x; int y[]; } "
+  test("struct MyStruct { int x; int y[]; }; "
        "kprobe:f { $s = (struct MyStruct *) arg0; @y = $s->y[0];}",
        Mock{ *bpftrace });
 }
 
 TEST_F(TypeCheckerTest, array_in_map)
 {
-  test("struct MyStruct { int x[2]; int y[4]; } "
+  test("struct MyStruct { int x[2]; int y[4]; }; "
        "kprobe:f { @ = ((struct MyStruct *)arg0)->x; }");
-  test("struct MyStruct { int x[2]; int y[4]; } "
+  test("struct MyStruct { int x[2]; int y[4]; }; "
        "kprobe:f { @a[0] = ((struct MyStruct *)arg0)->x; }");
   // Mismatched map value types
-  test("struct MyStruct { int x[2]; int y[4]; } "
+  test("struct MyStruct { int x[2]; int y[4]; }; "
        "kprobe:f { "
        "    @a[0] = ((struct MyStruct *)arg0)->x; "
        "    @a[1] = ((struct MyStruct *)arg0)->y; }",
        Error{});
   test("#include <stdint.h>\n"
-       "struct MyStruct { uint8_t x[8]; uint32_t y[2]; }"
+       "struct MyStruct { uint8_t x[8]; uint32_t y[2]; };"
        "kprobe:f { "
        "    @a[0] = ((struct MyStruct *)arg0)->x; "
        "    @a[1] = ((struct MyStruct *)arg0)->y; }",
@@ -1701,14 +1701,14 @@ TEST_F(TypeCheckerTest, array_in_map)
 
 TEST_F(TypeCheckerTest, array_as_map_key)
 {
-  test("struct MyStruct { int x[2]; int y[4]; }"
+  test("struct MyStruct { int x[2]; int y[4]; };"
        "kprobe:f { @x[((struct MyStruct *)arg0)->x] = 0; }");
 
-  test("struct MyStruct { int x[2]; int y[4]; }"
+  test("struct MyStruct { int x[2]; int y[4]; };"
        "kprobe:f { @x[((struct MyStruct *)arg0)->x, "
        "              ((struct MyStruct *)arg0)->y] = 0; }");
   test(R"(
-    struct MyStruct { int x[2]; int y[4]; }
+    struct MyStruct { int x[2]; int y[4]; };
     begin {
       @x[((struct MyStruct *)0)->x] = 0;
       @x[((struct MyStruct *)0)->y] = 1;
@@ -1719,32 +1719,32 @@ TEST_F(TypeCheckerTest, array_as_map_key)
 TEST_F(TypeCheckerTest, array_compare)
 {
   test("#include <stdint.h>\n"
-       "struct MyStruct { uint8_t x[4]; }"
+       "struct MyStruct { uint8_t x[4]; };"
        "kprobe:f { $s = (struct MyStruct *) arg0; @ = ($s->x == $s->x); }");
   test("#include <stdint.h>\n"
-       "struct MyStruct { uint64_t x[4]; } "
+       "struct MyStruct { uint64_t x[4]; }; "
        "kprobe:f { $s = (struct MyStruct *) arg0; @ = ($s->x == $s->x); }");
-  test("struct MyStruct { int x[4]; } "
+  test("struct MyStruct { int x[4]; }; "
        "kprobe:f { $s = (struct MyStruct *) arg0; @ = ($s->x != $s->x); }");
 
   // unsupported operators
-  test("struct MyStruct { int x[4]; } "
+  test("struct MyStruct { int x[4]; }; "
        "kprobe:f { $s = (struct MyStruct *) arg0; @ = ($s->x > $s->x); }",
        Error{});
 
   // different length
-  test("struct MyStruct { int x[4]; int y[8]; }"
+  test("struct MyStruct { int x[4]; int y[8]; };"
        "kprobe:f { $s = (struct MyStruct *) arg0; @ = ($s->x == $s->y); }",
        Error{});
 
   // different element type
   test("#include <stdint.h>\n"
-       "struct MyStruct { uint8_t x[4]; uint16_t y[4]; } "
+       "struct MyStruct { uint8_t x[4]; uint16_t y[4]; }; "
        "kprobe:f { $s = (struct MyStruct *) arg0; @ = ($s->x == $s->y); }",
        Error{});
 
   // compare with other type
-  test("struct MyStruct { int x[4]; int y; } "
+  test("struct MyStruct { int x[4]; int y; }; "
        "kprobe:f { $s = (struct MyStruct *) arg0; @ = ($s->x == $s->y); }",
        Error{});
 }
@@ -1875,8 +1875,8 @@ TEST_F(TypeCheckerTest, binop_array)
 TEST_F(TypeCheckerTest, unop_dereference)
 {
   test("kprobe:f { *0; }");
-  test("struct X { int n; } kprobe:f { $x = (struct X*)0; *$x; }");
-  test("struct X { int n; } kprobe:f { $x = *(struct X*)0; *$x; }", Error{});
+  test("struct X { int n; }; kprobe:f { $x = (struct X*)0; *$x; }");
+  test("struct X { int n; }; kprobe:f { $x = *(struct X*)0; *$x; }", Error{});
   test("kprobe:f { *\"0\"; }", Error{});
   test("kprobe:f { *true; }", Error{});
 }
@@ -1896,8 +1896,8 @@ TEST_F(TypeCheckerTest, unop_lnot)
   test("kprobe:f { !0; }");
   test("kprobe:f { !false; }");
   test("kprobe:f { !(int32)0; }");
-  test("struct X { int n; } kprobe:f { $x = (struct X*)0; !$x; }", Error{});
-  test("struct X { int n; } kprobe:f { $x = *(struct X*)0; !$x; }", Error{});
+  test("struct X { int n; }; kprobe:f { $x = (struct X*)0; !$x; }", Error{});
+  test("struct X { int n; }; kprobe:f { $x = *(struct X*)0; !$x; }", Error{});
   test("kprobe:f { !\"0\"; }", Error{});
 }
 
@@ -2133,8 +2133,8 @@ TEST_F(TypeCheckerTest, join_delimiter)
 
 TEST_F(TypeCheckerTest, variable_cast_types)
 {
-  std::string structs = "struct type1 { int field; } struct "
-                        "type2 { int field; }";
+  std::string structs = "struct type1 { int field; }; struct "
+                        "type2 { int field; };";
   test(structs +
        "kprobe:f { $x = (struct type1*)cpu; $x = (struct type1*)cpu; }");
   test(structs +
@@ -2144,8 +2144,8 @@ TEST_F(TypeCheckerTest, variable_cast_types)
 
 TEST_F(TypeCheckerTest, map_cast_types)
 {
-  std::string structs = "struct type1 { int field; } struct "
-                        "type2 { int field; }";
+  std::string structs = "struct type1 { int field; }; struct "
+                        "type2 { int field; };";
   test(structs +
        "kprobe:f { @x = *(struct type1*)cpu; @x = *(struct type1*)cpu; }");
   test(structs +
@@ -2333,16 +2333,16 @@ kprobe:f { @ = hist(5); print((1, (uint16)@)); }
 
 TEST_F(TypeCheckerTest, variable_casts_are_local)
 {
-  std::string structs = "struct type1 { int field; } struct "
-                        "type2 { int field; }";
+  std::string structs = "struct type1 { int field; }; struct "
+                        "type2 { int field; };";
   test(structs + "kprobe:f { $x = *(struct type1 *)cpu } "
                  "kprobe:func_1 { $x = *(struct type2 *)cpu; }");
 }
 
 TEST_F(TypeCheckerTest, map_casts_are_global)
 {
-  std::string structs = "struct type1 { int field; } struct "
-                        "type2 { int field; }";
+  std::string structs = "struct type1 { int field; }; struct "
+                        "type2 { int field; };";
   test(structs + "kprobe:f { @x = *(struct type1 *)cpu }"
                  "kprobe:func_1 { @x = *(struct type2 *)cpu }",
        Error{});
@@ -2365,14 +2365,14 @@ begin { (faketype)cpu }
 TEST_F(TypeCheckerTest, cast_struct)
 {
   // Casting struct by value is forbidden
-  test("struct mytype { int field; }\n"
+  test("struct mytype { int field; };\n"
        "begin { $s = (struct mytype *)cpu; (uint32)*$s; }",
        Error{ R"(
 stdin:2:36-44: ERROR: Cannot cast from C type "struct mytype"
 begin { $s = (struct mytype *)cpu; (uint32)*$s; }
                                    ~~~~~~~~
 )" });
-  test("struct mytype { int field; } "
+  test("struct mytype { int field; }; "
        "begin { (struct mytype)cpu }",
        Error{ R"(
 stdin:1:38-53: ERROR: Cannot cast from "uint64" to "struct mytype"
@@ -2413,14 +2413,14 @@ TEST_F(TypeCheckerTest, cast_string)
 
 TEST_F(TypeCheckerTest, field_access)
 {
-  std::string structs = "struct type1 { int field; }";
+  std::string structs = "struct type1 { int field; };";
   test(structs + "kprobe:f { $x = *(struct type1*)cpu; $x.field }");
   test(structs + "kprobe:f { @x = *(struct type1*)cpu; @x.field }");
 }
 
 TEST_F(TypeCheckerTest, field_access_wrong_field)
 {
-  std::string structs = "struct type1 { int field; }";
+  std::string structs = "struct type1 { int field; };";
   test(structs + "kprobe:f { ((struct type1 *)cpu)->blah }", Error{});
   test(structs + "kprobe:f { $x = (struct type1 *)cpu; $x->blah }", Error{});
   test(structs + "kprobe:f { @x = (struct type1 *)cpu; @x->blah }", Error{});
@@ -2428,14 +2428,14 @@ TEST_F(TypeCheckerTest, field_access_wrong_field)
 
 TEST_F(TypeCheckerTest, field_access_wrong_expr)
 {
-  std::string structs = "struct type1 { int field; }";
+  std::string structs = "struct type1 { int field; };";
   test(structs + "kprobe:f { 1234->field }", Error{});
 }
 
 TEST_F(TypeCheckerTest, field_access_types)
 {
-  std::string structs = "struct type1 { int field; char mystr[8]; }"
-                        "struct type2 { int field; }";
+  std::string structs = "struct type1 { int field; char mystr[8]; };"
+                        "struct type2 { int field; };";
 
   test(structs + "kprobe:f { (*((struct type1*)0)).field == 123 }");
   test(structs + "kprobe:f { (*((struct type1*)0)).field == \"abc\" }",
@@ -2453,7 +2453,7 @@ TEST_F(TypeCheckerTest, field_access_types)
 
 TEST_F(TypeCheckerTest, field_access_pointer)
 {
-  std::string structs = "struct type1 { int field; }";
+  std::string structs = "struct type1 { int field; };";
   test(structs + "kprobe:f { ((struct type1*)0)->field }");
   test(structs + "kprobe:f { ((struct type1*)0).field }");
   test(structs + "kprobe:f { *((struct type1*)0) }");
@@ -2462,8 +2462,8 @@ TEST_F(TypeCheckerTest, field_access_pointer)
 TEST_F(TypeCheckerTest, field_access_sub_struct)
 {
   std::string structs =
-      "struct type2 { int field; } "
-      "struct type1 { struct type2 *type2ptr; struct type2 type2; }";
+      "struct type2 { int field; }; "
+      "struct type1 { struct type2 *type2ptr; struct type2 type2; };";
 
   test(structs + "kprobe:f { (*(struct type1*)0).type2ptr->field }");
   test(structs + "kprobe:f { (*(struct type1*)0).type2.field }");
@@ -2480,7 +2480,7 @@ TEST_F(TypeCheckerTest, field_access_sub_struct)
 TEST_F(TypeCheckerTest, field_access_is_internal)
 {
   BPFtrace bpftrace;
-  std::string structs = "struct type1 { int x; }";
+  std::string structs = "struct type1 { int x; };";
 
   {
     auto result = test(structs + "kprobe:f { $x = (*(struct type1*)0).x }");
@@ -2504,15 +2504,15 @@ TEST_F(TypeCheckerTest, field_access_is_internal)
 
 TEST_F(TypeCheckerTest, struct_as_map_key)
 {
-  test("struct A { int x; } struct B { char x; } "
+  test("struct A { int x; }; struct B { char x; }; "
        "kprobe:f { @x[*((struct A *)arg0)] = 0; }");
 
-  test("struct A { int x; } struct B { char x; } "
+  test("struct A { int x; }; struct B { char x; }; "
        "kprobe:f { @x[*((struct A *)arg0), *((struct B *)arg1)] = 0; }");
 
   // Mismatched key types
   test(R"(
-    struct A { int x; } struct B { char x; }
+    struct A { int x; }; struct B { char x; };
     begin {
         @x[*((struct A *)0)] = 0;
         @x[*((struct B *)0)] = 1;
@@ -2612,47 +2612,47 @@ TEST_F(TypeCheckerTest, c_macros)
 {
   test("#define A 1\nkprobe:f { printf(\"%d\", A); }");
   test("#define A A\nkprobe:f { printf(\"%d\", A); }", Error{});
-  test("enum { A = 1 }\n#define A A\nkprobe:f { printf(\"%d\", A); }");
+  test("enum { A = 1 };\n#define A A\nkprobe:f { printf(\"%d\", A); }");
 }
 
 TEST_F(TypeCheckerTest, enums)
 {
   // Anonymous enums have empty string names in libclang <= 15,
   // so this is an important test
-  test("enum { a = 1, b } kprobe:f { printf(\"%d\", a); }");
-  test("enum { a = 1, b } kprobe:f { printf(\"%s\", a); }");
-  test("enum { a = 1, b } kprobe:f { $e = a; printf(\"%s\", $e); }");
-  test("enum { a = 1, b } kprobe:f { printf(\"%15s %-15s\", a, a); }");
+  test("enum { a = 1, b }; kprobe:f { printf(\"%d\", a); }");
+  test("enum { a = 1, b }; kprobe:f { printf(\"%s\", a); }");
+  test("enum { a = 1, b }; kprobe:f { $e = a; printf(\"%s\", $e); }");
+  test("enum { a = 1, b }; kprobe:f { printf(\"%15s %-15s\", a, a); }");
 
-  test("enum named { a = 1, b } kprobe:f { printf(\"%d\", a); }");
-  test("enum named { a = 1, b } kprobe:f { printf(\"%s\", a); }");
-  test("enum named { a = 1, b } kprobe:f { $e = a; printf(\"%s\", $e); }");
-  test("enum named { a = 1, b } kprobe:f { printf(\"%15s %-15s\", a, a); }");
+  test("enum named { a = 1, b }; kprobe:f { printf(\"%d\", a); }");
+  test("enum named { a = 1, b }; kprobe:f { printf(\"%s\", a); }");
+  test("enum named { a = 1, b }; kprobe:f { $e = a; printf(\"%s\", $e); }");
+  test("enum named { a = 1, b }; kprobe:f { printf(\"%15s %-15s\", a, a); }");
 }
 
 TEST_F(TypeCheckerTest, enum_casts)
 {
-  test("enum named { a = 1, b } kprobe:f { print((enum named)1); }");
+  test("enum named { a = 1, b }; kprobe:f { print((enum named)1); }");
   // We can't detect this issue because the cast expr is not a literal
-  test("enum named { a = 1, b } kprobe:f { $x = 3; print((enum named)$x); }");
+  test("enum named { a = 1, b }; kprobe:f { $x = 3; print((enum named)$x); }");
 
-  test("enum named { a = 1, b } kprobe:f { print((enum named)3); }", Error{ R"(
-stdin:1:42-54: ERROR: Enum: named doesn't contain a variant value of 3
-enum named { a = 1, b } kprobe:f { print((enum named)3); }
-                                         ~~~~~~~~~~~~
+  test("enum named { a = 1, b }; kprobe:f { print((enum named)3); }", Error{ R"(
+stdin:1:43-55: ERROR: Enum: named doesn't contain a variant value of 3
+enum named { a = 1, b }; kprobe:f { print((enum named)3); }
+                                          ~~~~~~~~~~~~
 )" });
 
-  test("enum Foo { a = 1, b } kprobe:f { print((enum Bar)1); }", Error{ R"(
-stdin:1:40-50: ERROR: Unknown enum: Bar
-enum Foo { a = 1, b } kprobe:f { print((enum Bar)1); }
-                                       ~~~~~~~~~~
+  test("enum Foo { a = 1, b }; kprobe:f { print((enum Bar)1); }", Error{ R"(
+stdin:1:41-51: ERROR: Unknown enum: Bar
+enum Foo { a = 1, b }; kprobe:f { print((enum Bar)1); }
+                                        ~~~~~~~~~~
 )" });
 
-  test("enum named { a = 1, b } kprobe:f { $a = \"str\"; print((enum "
+  test("enum named { a = 1, b }; kprobe:f { $a = \"str\"; print((enum "
        "named)$a); }",
        Error{ R"(
-stdin:1:54-66: ERROR: Cannot cast from "string[4]" to "enum named"
-enum named { a = 1, b } kprobe:f { $a = "str"; print((enum named)$a); }
+stdin:1:55-67: ERROR: Cannot cast from "string[4]" to "enum named"
+enum named { a = 1, b }; kprobe:f { $a = "str"; print((enum named)$a); }
                                                      ~~~~~~~~~~~~
 )" });
 }
@@ -2690,18 +2690,18 @@ TEST_F(TypeCheckerTest, unsigned_literal_arithmetic_warnings)
 
 TEST_F(TypeCheckerTest, string_comparison)
 {
-  test("struct MyStruct {char y[4]; } "
+  test("struct MyStruct {char y[4]; }; "
        "kprobe:f { $s = (struct MyStruct*)arg0; $s->y == \"abc\"}");
-  test("struct MyStruct {char y[4]; } "
+  test("struct MyStruct {char y[4]; }; "
        "kprobe:f { $s = (struct MyStruct*)arg0; \"abc\" != $s->y}");
-  test("struct MyStruct {char y[4]; } "
+  test("struct MyStruct {char y[4]; }; "
        "kprobe:f { $s = (struct MyStruct*)arg0; \"abc\" == \"abc\"}");
 
   std::string msg = "the condition is always false";
-  test("struct MyStruct {char y[4]; } "
+  test("struct MyStruct {char y[4]; }; "
        "kprobe:f { $s = (struct MyStruct*)arg0; $s->y == \"long string\"}",
        NoWarning{ msg });
-  test("struct MyStruct {char y[4]; } "
+  test("struct MyStruct {char y[4]; }; "
        "kprobe:f { $s = (struct MyStruct*)arg0; \"long string\" != $s->y}",
        NoWarning{ msg });
 }
@@ -2963,7 +2963,7 @@ TEST_F(TypeCheckerTest, intarray_cast_types)
   test("kprobe:f { @ = (int32[])(int16)1 }", Error{});
   test("kprobe:f { @ = (int8[2])\"hello\" }", Error{});
 
-  test("struct Foo { int x; } kprobe:f { @ = (struct Foo [2])1 }", Error{});
+  test("struct Foo { int x; }; kprobe:f { @ = (struct Foo [2])1 }", Error{});
 }
 
 TEST_F(TypeCheckerTest, bool_array_cast_types)
@@ -2987,21 +2987,21 @@ TEST_F(TypeCheckerTest, intarray_cast_usage)
 TEST_F(TypeCheckerTest, intarray_to_int_cast)
 {
   test("#include <stdint.h>\n"
-       "struct Foo { uint8_t x[8]; } "
+       "struct Foo { uint8_t x[8]; }; "
        "kprobe:f { @ = (int64)((struct Foo *)arg0)->x; }");
   test("#include <stdint.h>\n"
-       "struct Foo { uint32_t x[2]; } "
+       "struct Foo { uint32_t x[2]; }; "
        "kprobe:f { @ = (int64)((struct Foo *)arg0)->x; }");
   test("#include <stdint.h>\n"
-       "struct Foo { uint8_t x[4]; } "
+       "struct Foo { uint8_t x[4]; }; "
        "kprobe:f { @ = (int32)((struct Foo *)arg0)->x; }");
 
   test("#include <stdint.h>\n"
-       "struct Foo { uint8_t x[8]; } "
+       "struct Foo { uint8_t x[8]; }; "
        "kprobe:f { @ = (int32)((struct Foo *)arg0)->x; }",
        Error{});
   test("#include <stdint.h>\n"
-       "struct Foo { uint8_t x[8]; } "
+       "struct Foo { uint8_t x[8]; }; "
        "kprobe:f { @ = (int32 *)((struct "
        "Foo *)arg0)->x; }",
        Error{});
@@ -3475,8 +3475,8 @@ i:s:1 {
 
 TEST_F(TypeCheckerTest, type_ctx)
 {
-  std::string structs = "struct c {char c} struct x { long a; short b[4]; "
-                        "struct c c; struct c *d;}";
+  std::string structs = "struct c {char c}; struct x { long a; short b[4]; "
+                        "struct c c; struct c *d;};";
   auto result = test(structs + "kprobe:f { $x = (struct x*)ctx; $a "
                                "= $x->a; $b = $x->b[0]; "
                                "$c = $x->c.c; $d = $x->d->c;}");
@@ -3550,7 +3550,7 @@ TEST_F(TypeCheckerTest, double_pointer_basic)
   test(R"_(begin { $pp = (int8 **)0; $p = *$pp; $val = *$p; })_");
   test(R"_(begin { $pp = (int8 **)0; $val = **$pp; })_");
 
-  const std::string structs = "struct Foo { int x; }";
+  const std::string structs = "struct Foo { int x; };";
   test(structs + R"_(begin { $pp = (struct Foo **)0; $val = (*$pp)->x; })_");
 }
 
@@ -3590,7 +3590,7 @@ TEST_F(TypeCheckerTest, double_pointer_int)
 TEST_F(TypeCheckerTest, double_pointer_struct)
 {
   auto result = test(
-      "struct Foo { char x; long y; }"
+      "struct Foo { char x; long y; };"
       "kprobe:f { $pp = (struct Foo **)1; $p = *$pp; $val = $p->x; }");
   auto &stmts = result.ast.root->probes.at(0)->block->stmts;
 
@@ -4062,67 +4062,67 @@ TEST_F(TypeCheckerTest, call_path)
 
 TEST_F(TypeCheckerTest, call_offsetof)
 {
-  test("struct Foo { int x; long l; char c; } \
+  test("struct Foo { int x; long l; char c; }; \
         begin { @x = offsetof(struct Foo, x); }");
-  test("struct Foo { int comm; } \
+  test("struct Foo { int comm; }; \
         begin { @x = offsetof(struct Foo, comm); }");
-  test("struct Foo { int ctx; } \
+  test("struct Foo { int ctx; }; \
         begin { @x = offsetof(struct Foo, ctx); }");
-  test("struct Foo { int args; } \
+  test("struct Foo { int args; }; \
         begin { @x = offsetof(struct Foo, args); }");
-  test("struct Foo { int x; long l; char c; } \
-        struct Bar { struct Foo foo; int x; } \
+  test("struct Foo { int x; long l; char c; }; \
+        struct Bar { struct Foo foo; int x; }; \
         begin { @x = offsetof(struct Bar, x); }");
-  test("struct Foo { int x; long l; char c; } \
-        union Bar { struct Foo foo; int x; } \
+  test("struct Foo { int x; long l; char c; }; \
+        union Bar { struct Foo foo; int x; }; \
         begin { @x = offsetof(union Bar, x); }");
-  test("struct Foo { int x; long l; char c; } \
-        struct Fun { struct Foo foo; int (*call)(void); } \
+  test("struct Foo { int x; long l; char c; }; \
+        struct Fun { struct Foo foo; int (*call)(void); }; \
         begin { @x = offsetof(struct Fun, call); }");
-  test("struct Foo { int x; long l; char c; } \
+  test("struct Foo { int x; long l; char c; }; \
         begin { $foo = (struct Foo *)0; @x = offsetof(*$foo, x); }");
-  test("struct Foo { int x; long l; char c; } \
+  test("struct Foo { int x; long l; char c; }; \
         struct Ano { \
           struct { \
             struct Foo foo; \
             int a; \
           }; \
           long l; \
-        } \
+        }; \
         begin { @x = offsetof(struct Ano, a); }");
-  test("struct Foo { struct Bar { int a; } bar; } \
+  test("struct Foo { struct Bar { int a; } bar; }; \
         begin { @x = offsetof(struct Foo, bar.a); }");
-  test("struct Foo { struct Bar { int *a; } bar; } \
+  test("struct Foo { struct Bar { int *a; } bar; }; \
         begin { @x = offsetof(struct Foo, bar.a); }");
-  test("struct Foo { struct Bar { struct { int a; } anon; } bar; } \
+  test("struct Foo { struct Bar { struct { int a; } anon; } bar; }; \
         begin { @x = offsetof(struct Foo, bar.anon.a); }");
-  test("struct Foo { struct Bar { struct { int a; }; } bar; } \
+  test("struct Foo { struct Bar { struct { int a; }; } bar; }; \
         begin { @x = offsetof(struct Foo, bar.a); }");
 
   // Error tests
 
   // Bad type
-  test("struct Foo { struct Bar { int a; } *bar; } \
+  test("struct Foo { struct Bar { int a; } *bar; }; \
               begin { @x = offsetof(struct Foo, bar.a); }",
        Error{ R"(
-stdin:1:71-98: ERROR: 'struct Bar *' is not a C type.
-struct Foo { struct Bar { int a; } *bar; }               begin { @x = offsetof(struct Foo, bar.a); }
-                                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+stdin:1:72-99: ERROR: 'struct Bar *' is not a C type.
+struct Foo { struct Bar { int a; } *bar; };               begin { @x = offsetof(struct Foo, bar.a); }
+                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 )" });
   // Not exist (sub)field
-  test("struct Foo { int x; long l; char c; } \
+  test("struct Foo { int x; long l; char c; }; \
               begin { @x = offsetof(struct Foo, __notexistfield__); }",
        Error{ R"(
-stdin:1:66-105: ERROR: 'struct Foo' has no field named '__notexistfield__'
-struct Foo { int x; long l; char c; }               begin { @x = offsetof(struct Foo, __notexistfield__); }
-                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+stdin:1:67-106: ERROR: 'struct Foo' has no field named '__notexistfield__'
+struct Foo { int x; long l; char c; };               begin { @x = offsetof(struct Foo, __notexistfield__); }
+                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 )" });
-  test("struct Foo { struct Bar { int a; } bar; } \
+  test("struct Foo { struct Bar { int a; } bar; }; \
               begin { @x = offsetof(struct Foo, bar.__notexist_subfield__); }",
        Error{ R"(
-stdin:1:70-117: ERROR: 'struct Bar' has no field named '__notexist_subfield__'
-struct Foo { struct Bar { int a; } bar; }               begin { @x = offsetof(struct Foo, bar.__notexist_subfield__); }
-                                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+stdin:1:71-118: ERROR: 'struct Bar' has no field named '__notexist_subfield__'
+struct Foo { struct Bar { int a; } bar; };               begin { @x = offsetof(struct Foo, bar.__notexist_subfield__); }
+                                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 )" });
   // Non-existent type
   test("begin { @x = offsetof(__passident__, x); }", Error{});
@@ -4878,7 +4878,7 @@ TEST_F(TypeCheckerTest, variable_declarations)
   // Test more types
   test("struct x { int a; }; begin { let $a: struct x; }");
   test("struct x { int a; }; begin { let $a: struct x *; }");
-  test("struct x { int a; } begin { let $a: struct x[10]; }");
+  test("struct x { int a; }; begin { let $a: struct x[10]; }");
   test("begin { if (pid) { let $x = 1; } $x = 2; }");
   test("begin { if (pid) { let $x = 1; } else { let $x = 1; } let $x = 1; }");
 
@@ -5402,11 +5402,11 @@ TEST_F(TypeCheckerTest, typeof_casts)
       Error{});
 
   test(
-      R"(struct foo { int x; } kprobe:f { $x = (struct foo*)0; $y = (typeof(*$x))0; })",
+      R"(struct foo { int x; }; kprobe:f { $x = (struct foo*)0; $y = (typeof(*$x))0; })",
       Error{ R"(
-stdin:1:60-73: ERROR: Cannot cast from "int8" to "struct foo"
-struct foo { int x; } kprobe:f { $x = (struct foo*)0; $y = (typeof(*$x))0; }
-                                                           ~~~~~~~~~~~~~
+stdin:1:61-74: ERROR: Cannot cast from "int8" to "struct foo"
+struct foo { int x; }; kprobe:f { $x = (struct foo*)0; $y = (typeof(*$x))0; }
+                                                            ~~~~~~~~~~~~~
 )" });
 }
 
@@ -5473,7 +5473,7 @@ TEST_F(TypeCheckerTest, no_meta_used_warnings)
 {
   test("begin { let $a; print(sizeof($a)); $a = 1; }",
        NoWarning{ "Variable used" });
-  test("struct Foo { int x; } begin { let $a : struct Foo*; "
+  test("struct Foo { int x; }; begin { let $a : struct Foo*; "
        "print(offsetof(*$a, x)); }",
        NoWarning{ "Variable used" });
   test("begin { let $a; let $b : typeof($a) = 0; $a = 1; }",
@@ -5530,9 +5530,9 @@ TEST_F(TypeCheckerTest, record)
   test(R"(begin { $t = (a=1, b=(int64)2); $t = (a=2, b=(int32)3); })");
   test(R"(begin { $t = (a=1, b=(int32)2); $t = (a=2, b=(int64)3); })");
 
-  test(R"(struct task_struct { int x; } begin { $t = (a=1, b=curtask); })");
+  test(R"(struct task_struct { int x; }; begin { $t = (a=1, b=curtask); })");
   test(
-      R"(struct task_struct { int x[4]; } begin { $t = (a=1, b=curtask->x); })");
+      R"(struct task_struct { int x[4]; }; begin { $t = (a=1, b=curtask->x); })");
 
   // Different field order should be compatible as long as types match
   test(R"(begin { $t = (a=1, b=2); $t = (b=4, a=5); })");

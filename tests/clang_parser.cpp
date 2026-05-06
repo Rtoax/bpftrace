@@ -43,7 +43,7 @@ static ast::CDefinitions parse(
 TEST(clang_parser, integers)
 {
   BPFtrace bpftrace;
-  parse("struct Foo { int x; int y, z; }", bpftrace);
+  parse("struct Foo { int x; int y, z; };", bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
   auto foo = bpftrace.structs.Lookup("struct Foo").lock();
@@ -70,7 +70,7 @@ TEST(clang_parser, integers)
 TEST(clang_parser, c_union)
 {
   BPFtrace bpftrace;
-  parse("union Foo { char c; short s; int i; long l; }", bpftrace);
+  parse("union Foo { char c; short s; int i; long l; };", bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("union Foo"));
   auto foo = bpftrace.structs.Lookup("union Foo").lock();
@@ -102,7 +102,7 @@ TEST(clang_parser, c_union)
 TEST(clang_parser, c_enum)
 {
   BPFtrace bpftrace;
-  auto c_defs = parse("enum E { NONE, SOME = 99, }; struct Foo { enum E e; }",
+  auto c_defs = parse("enum E { NONE, SOME = 99, }; struct Foo { enum E e; };",
                       bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
@@ -206,7 +206,7 @@ TEST(clang_parser, c_enum_anonymous)
 TEST(clang_parser, integer_ptr)
 {
   BPFtrace bpftrace;
-  parse("struct Foo { int *x; }", bpftrace);
+  parse("struct Foo { int *x; };", bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
   auto foo = bpftrace.structs.Lookup("struct Foo").lock();
@@ -224,7 +224,7 @@ TEST(clang_parser, integer_ptr)
 TEST(clang_parser, string_ptr)
 {
   BPFtrace bpftrace;
-  parse("struct Foo { char *str; }", bpftrace);
+  parse("struct Foo { char *str; };", bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
   auto foo = bpftrace.structs.Lookup("struct Foo").lock();
@@ -243,7 +243,7 @@ TEST(clang_parser, string_ptr)
 TEST(clang_parser, string_array)
 {
   BPFtrace bpftrace;
-  parse("struct Foo { char str[32]; }", bpftrace);
+  parse("struct Foo { char str[32]; };", bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
   auto foo = bpftrace.structs.Lookup("struct Foo").lock();
@@ -261,7 +261,7 @@ TEST(clang_parser, string_array)
 TEST(clang_parser, nested_struct_named)
 {
   BPFtrace bpftrace;
-  parse("struct Bar { int x; } struct Foo { struct Bar bar; }", bpftrace);
+  parse("struct Bar { int x; }; struct Foo { struct Bar bar; };", bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
   ASSERT_TRUE(bpftrace.structs.Has("struct Bar"));
@@ -281,7 +281,7 @@ TEST(clang_parser, nested_struct_named)
 TEST(clang_parser, nested_struct_ptr_named)
 {
   BPFtrace bpftrace;
-  parse("struct Bar { int x; } struct Foo { struct Bar *bar; }", bpftrace);
+  parse("struct Bar { int x; }; struct Foo { struct Bar *bar; };", bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
   ASSERT_TRUE(bpftrace.structs.Has("struct Bar"));
@@ -304,7 +304,7 @@ TEST(clang_parser, nested_struct_no_type)
   BPFtrace bpftrace;
   // bar and baz's struct/union do not have type names, but are not anonymous
   // since they are called bar and baz
-  parse("struct Foo { struct { int x; } bar; union { int y; } baz; }",
+  parse("struct Foo { struct { int x; } bar; union { int y; } baz; };",
         bpftrace);
 
   std::string bar_name = "struct Foo::(unnamed at definitions.h:2:14)";
@@ -359,7 +359,7 @@ TEST(clang_parser, nested_struct_unnamed_fields)
         "  struct { int x; int y; };" // Anonymous struct field
         "  int a;"
         "  struct Bar { int z; };" // Struct definition - not a field of Foo
-        "}",
+        "};",
         bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
@@ -404,7 +404,7 @@ TEST(clang_parser, nested_struct_anon_union_struct)
         "  };"
         "  int a;"
         "  struct { int z; };"
-        "}",
+        "};",
         bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
@@ -442,7 +442,7 @@ TEST(clang_parser, nested_struct_anon_union_struct)
 TEST(clang_parser, bitfields)
 {
   BPFtrace bpftrace;
-  parse("struct Foo { int a:8, b:8, c:16; }", bpftrace);
+  parse("struct Foo { int a:8, b:8, c:16; };", bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
   auto foo = bpftrace.structs.Lookup("struct Foo").lock();
@@ -486,7 +486,7 @@ TEST(clang_parser, bitfields)
 TEST(clang_parser, bitfields_uneven_fields)
 {
   BPFtrace bpftrace;
-  parse("struct Foo { int a:1, b:1, c:3, d:20, e:7; }", bpftrace);
+  parse("struct Foo { int a:1, b:1, c:3, d:20, e:7; };", bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
   auto foo = bpftrace.structs.Lookup("struct Foo").lock();
@@ -568,7 +568,7 @@ TEST(clang_parser, bitfields_uneven_fields)
 TEST(clang_parser, bitfields_with_padding)
 {
   BPFtrace bpftrace;
-  parse("struct Foo { int pad; int a:28, b:4; long int end;}", bpftrace);
+  parse("struct Foo { int pad; int a:28, b:4; long int end;};", bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
   auto foo = bpftrace.structs.Lookup("struct Foo").lock();
@@ -614,7 +614,7 @@ TEST(clang_parser, builtin_headers)
 {
   // size_t is defined in stddef.h
   BPFtrace bpftrace;
-  parse("#include <stddef.h>\nstruct Foo { size_t x, y, z; }", bpftrace);
+  parse("#include <stddef.h>\nstruct Foo { size_t x, y, z; };", bpftrace);
 
   ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
   auto foo = bpftrace.structs.Lookup("struct Foo").lock();
@@ -667,7 +667,7 @@ TEST_F(clang_parser_btf, btf)
         "  struct Foo2 f2;"
         "  struct Foo3 f3;"
         "  struct Foo4 f4;"
-        "}",
+        "};",
         *bpftrace);
 
   ASSERT_TRUE(bpftrace->structs.Has("struct Foo1"));
@@ -743,7 +743,7 @@ TEST_F(clang_parser_btf, btf)
 TEST_F(clang_parser_btf, struct_enum_fields)
 {
   auto bpftrace = get_mock_bpftrace();
-  auto defs = parse("struct Foo { enum FooEnum e; }", *bpftrace);
+  auto defs = parse("struct Foo { enum FooEnum e; };", *bpftrace);
 
   ASSERT_TRUE(defs.enum_defs.contains("FooEnum"));
 }
@@ -860,7 +860,7 @@ TEST(clang_parser, struct_typedef)
 TEST(clang_parser, struct_qualifiers)
 {
   BPFtrace bpftrace;
-  parse("struct a {int a} struct b { volatile const struct a* restrict a; "
+  parse("struct a {int a}; struct b { volatile const struct a* restrict a; "
         "const struct a a2; };",
         bpftrace);
 
@@ -882,6 +882,34 @@ TEST(clang_parser, redefined_types)
   BPFtrace bpftrace;
   parse("struct a {int a;}; struct a {int a;};", bpftrace, false);
   parse("struct a {int a;}; struct a {int a; short b;};", bpftrace, false);
+}
+
+TEST(clang_parser, attribute)
+{
+  BPFtrace bpftrace;
+  parse("struct Foo { int x; char y; int z; } __attribute__((packed));",
+        bpftrace);
+
+  ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
+  auto foo = bpftrace.structs.Lookup("struct Foo").lock();
+
+  EXPECT_EQ(foo->size, 9);
+  ASSERT_EQ(foo->fields.size(), 3U);
+  ASSERT_EQ(foo->HasField("x"), true);
+  ASSERT_EQ(foo->HasField("y"), true);
+  ASSERT_EQ(foo->HasField("z"), true);
+
+  EXPECT_TRUE(foo->GetField("x").type.IsIntTy());
+  EXPECT_EQ(foo->GetField("x").type.GetSize(), 4U);
+  EXPECT_EQ(foo->GetField("x").offset, 0);
+
+  EXPECT_TRUE(foo->GetField("y").type.IsIntTy());
+  EXPECT_EQ(foo->GetField("y").type.GetSize(), 1U);
+  EXPECT_EQ(foo->GetField("y").offset, 4);
+
+  EXPECT_TRUE(foo->GetField("z").type.IsIntTy());
+  EXPECT_EQ(foo->GetField("z").type.GetSize(), 4U);
+  EXPECT_EQ(foo->GetField("z").offset, 5);
 }
 
 } // namespace bpftrace::test::clang_parser
