@@ -884,4 +884,31 @@ TEST(clang_parser, redefined_types)
   parse("struct a {int a;}; struct a {int a; short b;};", bpftrace, false);
 }
 
+TEST(clang_parser, attribute)
+{
+  BPFtrace bpftrace;
+  parse("struct Foo __attribute__((packed)) { int x; int y, z; }", bpftrace);
+
+  ASSERT_TRUE(bpftrace.structs.Has("struct Foo"));
+  auto foo = bpftrace.structs.Lookup("struct Foo").lock();
+
+  EXPECT_EQ(foo->size, 12);
+  ASSERT_EQ(foo->fields.size(), 3U);
+  ASSERT_EQ(foo->HasField("x"), true);
+  ASSERT_EQ(foo->HasField("y"), true);
+  ASSERT_EQ(foo->HasField("z"), true);
+
+  EXPECT_TRUE(foo->GetField("x").type.IsIntTy());
+  EXPECT_EQ(foo->GetField("x").type.GetSize(), 4U);
+  EXPECT_EQ(foo->GetField("x").offset, 0);
+
+  EXPECT_TRUE(foo->GetField("y").type.IsIntTy());
+  EXPECT_EQ(foo->GetField("y").type.GetSize(), 4U);
+  EXPECT_EQ(foo->GetField("y").offset, 4);
+
+  EXPECT_TRUE(foo->GetField("z").type.IsIntTy());
+  EXPECT_EQ(foo->GetField("z").type.GetSize(), 4U);
+  EXPECT_EQ(foo->GetField("z").offset, 8);
+}
+
 } // namespace bpftrace::test::clang_parser

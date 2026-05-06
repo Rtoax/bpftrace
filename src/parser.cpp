@@ -309,6 +309,18 @@ CStatement *Parser::parse_c_definition()
       break;
     }
   }
+
+  // TODO: __attribute__ could after struct definition
+#if 0
+  while (!at_end()) {
+    char next = peek();
+    def += next;
+    advance();
+    if (next == ')')
+      break;
+  }
+#endif
+
   // Trim trailing whitespace.
   while (!def.empty() && std::isspace(def.back())) {
     def.pop_back();
@@ -322,6 +334,9 @@ CStatement *Parser::parse_c_definition()
   if (!at_end() && peek() == ';') {
     advance();
   }
+
+  std::cout << "input_: " << *input_ << std::endl;
+  std::cout << "def: " << def << std::endl;
   auto loc = make_loc(begin_line, begin_col, line_, col_);
   return ctx_.make_node<CStatement>(loc, std::move(def));
 }
@@ -3373,7 +3388,7 @@ bool Parser::looks_like_c_definition() const
   // Skip keyword (struct/union/enum), then accept an arbitrary sequence of
   // identifiers and balanced (...) / [...] groups before the opening brace.
   // This covers declarations like:
-  //   struct Foo __attribute__((packed)) {
+  //   struct __attribute__((packed)) Foo { ... }
   // while still rejecting attach points such as:
   //   struct:probe { ... }
   p = scan_identifier_end(p);

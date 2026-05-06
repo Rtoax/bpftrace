@@ -611,6 +611,8 @@ bool ClangParser::parse(ast::Program *program,
       .Length = input.size(),
   });
 
+  std::cout << "input: " << input << std::endl;
+
   args = { "-isystem", "/bpftrace/include" };
   auto system_paths = system_include_paths();
   for (auto &path : system_paths) {
