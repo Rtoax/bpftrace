@@ -9,6 +9,8 @@ and this project adheres to
 ## Unreleased
 
 #### Breaking Changes
+- struct/union/enum definitions must end with a semicolon.
+  - [#5153](https://github.com/bpftrace/bpftrace/pull/5153)
 - stdlib: Change `pcomm` to an alias of task.real_parent.comm instead of task.group_leader.comm.
   - [#5132](https://github.com/bpftrace/bpftrace/pull/5132)
 - Subtraction and decrement ops now produce an int64 instead of a uint64.

@@ -84,7 +84,7 @@ TEST(resource_analyser, fmt_string_args_size_arrays)
 {
   RequiredResources resources;
   test(
-      R"(struct Foo { int a; char b[10]; } begin { $foo = (struct Foo *)0; $foo2 = (struct Foo *)1; printf("%d %s %d %s\n", $foo->a, $foo->b, $foo2->a, $foo2->b) })",
+      R"(struct Foo { int a; char b[10]; }; begin { $foo = (struct Foo *)0; $foo2 = (struct Foo *)1; printf("%d %s %d %s\n", $foo->a, $foo->b, $foo2->a, $foo2->b) })",
       true,
       &resources);
   EXPECT_EQ(resources.max_fmtstring_args_size, 40);
@@ -111,7 +111,7 @@ TEST(resource_analyser, fmt_string_args_non_map_print_arr)
 {
   RequiredResources resources;
   test(
-      R"(struct Foo { char a[24]; } begin { print(5); $foo = (struct Foo *)0; print($foo->a) })",
+      R"(struct Foo { char a[24]; }; begin { print(5); $foo = (struct Foo *)0; print($foo->a) })",
       true,
       &resources);
 
