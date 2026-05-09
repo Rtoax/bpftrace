@@ -75,6 +75,7 @@ void BTF::load_vmlinux_btf()
   // Try to get BTF file from BPFTRACE_BTF env
   char *path = std::getenv("BPFTRACE_BTF");
   if (path) {
+    std::cout << "btf_objects.push_back(" << "" << ")" << std::endl;
     btf_objects.push_back(BTFObj{ .btf = btf__parse_raw(path), .name = "" });
     vmlinux_btf = btf_objects.back().btf;
     if (!vmlinux_btf) {
@@ -88,6 +89,7 @@ void BTF::load_vmlinux_btf()
               << strerror(errno);
       return;
     }
+    std::cout << "btf_objects.push_back(" << "vmlinux" << ")" << std::endl;
     btf_objects.push_back(BTFObj{ .btf = vmlinux_btf, .name = "vmlinux" });
   }
 
@@ -138,6 +140,11 @@ not_support:
 void BTF::load_module_btfs(const std::set<std::string> &modules)
 {
   load_vmlinux_btf();
+
+  for (const std::string& mod : modules) {
+    std::cout << "mod: " << mod << std::endl;
+  }
+
   if ((bpftrace_ && !has_module_btf()) || state != VMLINUX_LOADED)
     return;
 
@@ -178,6 +185,7 @@ void BTF::load_module_btfs(const std::set<std::string> &modules)
       continue;
 
     if (modules.contains(name)) {
+      std::cout << "btf_objects.push_back(" << name << ")" << std::endl;
       btf_objects.push_back(
           BTFObj{ .btf = btf__load_from_kernel_by_id_split(id, vmlinux_btf),
                   .name = name });
@@ -1079,8 +1087,12 @@ std::set<std::string> BTF::get_all_structs_from_btf(const struct btf *btf) const
 
     if (bt_verbose)
       btf_dump__dump_type(dump, id);
-    else
+    else {
       struct_set.insert(std::move(name));
+//      std::cout << "struct_set-insert: " << name << std::endl;
+    }
+
+//    std::cout << "name: " << name << std::endl;
   }
 
   if (id != (max + 1))
@@ -1098,6 +1110,7 @@ std::set<std::string> BTF::get_all_structs_from_btf(const struct btf *btf) const
         if (line == "};") {
           // end of type definition
           struct_set.insert(type);
+//          std::cout << "name2: " << type << std::endl;
           type.clear();
           in_def = false;
         }

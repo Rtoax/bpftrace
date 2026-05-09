@@ -35,6 +35,10 @@ std::set<std::string> ProbeMatcher::get_matches_in_stream(
                                           start_wildcard,
                                           end_wildcard);
 
+  for (const auto& token : tokens) {
+    std::cout << "token: " << token << std::endl;
+  }
+
   // Since demangled_name contains function parameters, we need to remove
   // them unless the user specified '(' in the search input (i.e. wants
   // to match against the parameters explicitly).
@@ -43,11 +47,11 @@ std::set<std::string> ProbeMatcher::get_matches_in_stream(
     return token.find('(') != std::string::npos;
   };
   const bool truncate_parameters = std::ranges::none_of(tokens,
-
                                                         has_parameter);
 
   std::string line;
   std::set<std::string> matches;
+  std::cout << "delim: " << delim << std::endl;
   while (std::getline(symbol_stream, line, delim)) {
     if (!util::wildcard_match(line, tokens, start_wildcard, end_wildcard)) {
       if (demangle_symbols) {
@@ -76,6 +80,7 @@ std::set<std::string> ProbeMatcher::get_matches_in_stream(
           }
         }
       }
+      std::cout << "line-nomatch: " << line << std::endl;
       continue;
     }
   out:
@@ -83,8 +88,15 @@ std::set<std::string> ProbeMatcher::get_matches_in_stream(
     if (line.find(".part.") != std::string::npos)
       continue;
 
+    std::cout << "line: " << line << std::endl;
     matches.insert(line);
   }
+
+  for (const auto& name : matches) {
+    std::cout << "matches0: " << name << std::endl;
+  }
+
+  //return std::unique_set(matches.begin(), matches.end());
   return matches;
 }
 
@@ -796,6 +808,10 @@ std::vector<std::string> ProbeMatcher::get_structs_for_listing(
   std::vector<std::string> results;
   std::set<std::string> structs;
   auto structmap = bpftrace_->btf_->get_all_structs();
+
+  for (const std::string& s : structs) {
+    std::cout << "struct: " << s << std::endl;
+  }
 
   std::string search_input = search;
   // If verbose is on, structs will contain full definitions
