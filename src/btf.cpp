@@ -1077,8 +1077,12 @@ std::set<std::string> BTF::get_all_structs_from_btf(const struct btf *btf) const
 
     if (bt_verbose)
       btf_dump__dump_type(dump, id);
-    else
+    else {
       struct_set.insert(std::move(name));
+      std::cout << "struct_set-insert: " << name << std::endl;
+    }
+
+    std::cout << "name: " << name << std::endl;
   }
 
   if (id != (max + 1))
@@ -1096,6 +1100,7 @@ std::set<std::string> BTF::get_all_structs_from_btf(const struct btf *btf) const
         if (line == "};") {
           // end of type definition
           struct_set.insert(type);
+          std::cout << "name2: " << type << std::endl;
           type.clear();
           in_def = false;
         }

@@ -43,7 +43,6 @@ std::set<std::string> ProbeMatcher::get_matches_in_stream(
     return token.find('(') != std::string::npos;
   };
   const bool truncate_parameters = std::ranges::none_of(tokens,
-
                                                         has_parameter);
 
   std::string line;
@@ -83,7 +82,12 @@ std::set<std::string> ProbeMatcher::get_matches_in_stream(
     if (line.find(".part.") != std::string::npos)
       continue;
 
+    std::cout << "line: " << line << std::endl;
     matches.insert(line);
+  }
+
+  for (const auto& name : matches) {
+    std::cout << "matches0: " << name << std::endl;
   }
   return matches;
 }
@@ -763,8 +767,8 @@ std::vector<std::string> ProbeMatcher::get_structs_for_listing(
 
   std::string search_input = search;
   // If verbose is on, structs will contain full definitions
-  if (bt_verbose)
-    search_input += " *{*}*";
+  //if (bt_verbose)
+  //  search_input += " *{*}*";
 
   for (const auto& match : get_matches_in_set(search_input, structs))
     results.push_back(match);
