@@ -3776,4 +3776,32 @@ TEST(Parser, discard)
   test("kprobe:f { _ = 1; }",
        Program().WithProbe(Probe({ "kprobe:f" }, { DiscardExpr(Integer(1)) })));
 }
+
+TEST(Parser, struct_attribute)
+{
+  test_parse_failure("struct foo {} __attribute__ begin {}",
+                     R"(
+stdin:1:29-34: ERROR: syntax: __attribute__ syntax error, expect '(('
+struct foo {} __attribute__ begin {}
+                            ~~~~~
+)");
+  test_parse_failure("struct foo {} __attribute__ (packed) begin {}",
+                     R"(
+stdin:1:29-30: ERROR: syntax: __attribute__ syntax error, expect '(('
+struct foo {} __attribute__ (packed) begin {}
+                            ~
+)");
+  test_parse_failure("struct foo {} __attribute__ ( (packed)) begin {}",
+                     R"(
+stdin:1:29-30: ERROR: syntax: __attribute__ syntax error, expect '(('
+struct foo {} __attribute__ ( (packed)) begin {}
+                            ~
+)");
+  test_parse_failure("struct foo {} __attribute__ ((packed) begin {}",
+                     R"(
+stdin:1:29-30: ERROR: syntax: __attribute__ syntax error, mismatch '(' and ')'
+struct foo {} __attribute__ ((packed) begin {}
+                            ~
+)");
+}
 } // namespace bpftrace::test::parser
