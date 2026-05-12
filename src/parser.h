@@ -116,7 +116,10 @@ private:
   // Lexer helpers: scan (take pos, return new pos, no advance pos_)
   size_t scan_layout(size_t pos) const;
   size_t scan_identifier_end(size_t pos) const;
-  size_t scan_balanced(size_t pos, char open, char close) const;
+  size_t scan_balanced(size_t pos,
+                       char open,
+                       char close,
+                       int require_min_depth = 1) const;
   size_t scan_pointer_suffix(size_t pos) const;
 
   // Lexer helpers: consume (advance pos_/line_/col_)
