@@ -313,6 +313,24 @@ CStatement *Parser::parse_c_definition()
   while (!def.empty() && std::isspace(def.back())) {
     def.pop_back();
   }
+  // Consume attributions, like __attribute__((packed, aligend(1))), and
+  // it supports specifying __attribute__ multiple times.
+  while (check_keyword("__attribute__")) {
+    size_t pos = scan_layout(pos_) + 13;
+    pos = scan_layout(pos);
+    char attr_next = at(pos);
+    if (attr_next != '(') {
+      error("__attribute__ syntax error, expect '('");
+    }
+    size_t after = scan_balanced(pos, '(', ')', 2);
+    if (after == pos || char_at(after - 1) != ')') {
+      error("__attribute__ syntax error, mismatch '(' and ')' or at least two "
+            "levels of brackets are required.");
+    }
+    pos = scan_layout(after);
+    def += view(pos_, pos);
+    advance(pos - pos_);
+  }
   // Ensure trailing semicolon.
   if (!def.empty() && def.back() != ';') {
     def += ";";
@@ -2832,23 +2850,29 @@ size_t Parser::scan_identifier_end(size_t pos) const
   return pos;
 }
 
-size_t Parser::scan_balanced(size_t pos, char open, char close) const
+size_t Parser::scan_balanced(size_t pos,
+                             char open,
+                             char close,
+                             int require_min_depth) const
 {
   if (char_at(pos) != open) {
     return pos;
   }
 
+  size_t orig_pos = pos;
   int depth = 1;
+  int max_depth = depth;
   pos++;
   while (in_bounds(pos) && depth > 0) {
     if (at(pos) == open) {
       depth++;
+      max_depth = depth;
     } else if (at(pos) == close) {
       depth--;
     }
     pos++;
   }
-  return pos;
+  return require_min_depth > max_depth ? orig_pos : pos;
 }
 
 size_t Parser::scan_pointer_suffix(size_t pos) const
@@ -3373,7 +3397,7 @@ bool Parser::looks_like_c_definition() const
   // Skip keyword (struct/union/enum), then accept an arbitrary sequence of
   // identifiers and balanced (...) / [...] groups before the opening brace.
   // This covers declarations like:
-  //   struct Foo __attribute__((packed)) {
+  //   struct __attribute__((packed)) Foo {
   // while still rejecting attach points such as:
   //   struct:probe { ... }
   p = scan_identifier_end(p);
