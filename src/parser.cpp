@@ -313,6 +313,63 @@ CStatement *Parser::parse_c_definition()
   while (!def.empty() && std::isspace(def.back())) {
     def.pop_back();
   }
+  // Consume attribution, like __attribute__((packed)).
+  size_t before = pos_;
+  while (!at_end()) {
+    // skipping whitespace between '}' and '__attribute__'
+    if (std::isspace(peek())) {
+      advance();
+      continue;
+    }
+    // try found '__attribute__'
+    auto kw = peek_keyword();
+    if ((kw == "__attribute__")) {
+      def += "__attribute__";
+      advance(13);
+      // skipping whitespace between '__attribute__' and '('
+      while (!at_end() && std::isspace(peek())) {
+        advance();
+      }
+      // consume characters between '((' and '))'
+      int attr_depth = 0;
+      while (!at_end()) {
+        char attr_next = peek();
+        if (attr_next == '(') {
+          def += attr_next;
+          advance();
+          if (++attr_depth == 2) {
+            break;
+          }
+        } else if (std::isspace(attr_next)) {
+          advance();
+        } else {
+          error("__attribute__ syntax error, expect '('");
+        }
+      }
+      while (!at_end()) {
+        char end_next = peek();
+        def += end_next;
+        advance();
+        // match more '(' like __attribute__((aligned(1)))
+        if (end_next == '(') {
+          attr_depth++;
+        } else if (end_next == ')') {
+          if (--attr_depth == 0) {
+            break;
+          }
+        }
+      }
+      consume_layout();
+      if (attr_depth == 0) {
+        break;
+      } else {
+        error("__attribute__ syntax error, parentheses mismatch");
+      }
+    } else {
+      pos_ = before;
+      break;
+    }
+  }
   // Ensure trailing semicolon.
   if (!def.empty() && def.back() != ';') {
     def += ";";
@@ -3373,7 +3430,7 @@ bool Parser::looks_like_c_definition() const
   // Skip keyword (struct/union/enum), then accept an arbitrary sequence of
   // identifiers and balanced (...) / [...] groups before the opening brace.
   // This covers declarations like:
-  //   struct Foo __attribute__((packed)) {
+  //   struct __attribute__((packed)) Foo {
   // while still rejecting attach points such as:
   //   struct:probe { ... }
   p = scan_identifier_end(p);
