@@ -37,9 +37,15 @@ and this project adheres to
   - [#5092](https://github.com/bpftrace/bpftrace/pull/5092)
 - The default type for positive integer literals is now `int8`
   - [#5138](https://github.com/bpftrace/bpftrace/pull/5138)
+- Warn instead of error when there is an integer sign mismatch, except for integer literals that are out of range for the destination type
+  - [#5148](https://github.com/bpftrace/bpftrace/pull/5148)
 #### Deprecated
 #### Removed
 #### Fixed
+- Silence warning hints when warnings are disabled (`--no-warnings`)
+  - [#5151](https://github.com/bpftrace/bpftrace/pull/5151)
+- Fix kfunc/fentry probe listing incorrectly showing a `retval` parameter
+  - [#5147](https://github.com/bpftrace/bpftrace/pull/5147)
 - stdlib: Fixed strerror() and signal_name() failing BPF verification
   - [#5145](https://github.com/bpftrace/bpftrace/pull/5145)
 - Fix boolean to integer cast on big-endian architectures
