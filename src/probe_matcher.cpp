@@ -795,14 +795,23 @@ std::vector<std::string> ProbeMatcher::get_structs_for_listing(
 {
   std::vector<std::string> results;
   auto structs = bpftrace_->btf_->get_all_structs();
+  StructSet structs_modules = bpftrace_->btf_->get_all_structs2();
 
   std::string search_input = search;
   // If verbose is on, structs will contain full definitions
   if (bt_verbose)
     search_input += " *{*}*";
 
-  for (const auto& match : get_matches_in_set(search_input, structs))
-    results.push_back(match);
+  std::map<std::string, std::string> dict(structs_modules.begin(),
+                                          structs_modules.end());
+
+  for (const auto& match : get_matches_in_set(search_input, structs)) {
+    auto module = dict.find(match);
+    if (module != dict.end())
+      results.push_back(std::string(">>") + module->second + std::string(": ") + match);
+    else
+      results.push_back(match);
+  }
   return results;
 }
 } // namespace bpftrace

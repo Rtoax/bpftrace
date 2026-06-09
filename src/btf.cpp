@@ -1113,11 +1113,88 @@ std::set<std::string> BTF::get_all_structs_from_btf(const struct btf *btf) const
   return struct_set;
 }
 
+StructSet BTF::get_all_structs_from_btf2(const struct btf *btf,
+                                         const std::string module) const
+{
+  StructSet struct_set;
+
+  std::stringstream types;
+  auto *dump = dump_new(btf, dump_printf, &types);
+  if (auto err = libbpf_get_error(dump)) {
+    char err_buf[256] = { 0 };
+    libbpf_strerror(err, err_buf, sizeof(err_buf));
+    LOG(ERROR) << "BTF: failed to initialize dump (" << err_buf << ")";
+    return {};
+  }
+  SCOPE_EXIT
+  {
+    btf_dump__free(dump);
+  };
+
+  auto id = start_id(btf), max = type_cnt(btf);
+  for (; id <= max; id++) {
+    const struct btf_type *t = btf__type_by_id(btf, id);
+
+    if (!t || !(btf_is_struct(t) || btf_is_union(t) || btf_is_enum(t)))
+      continue;
+
+    const std::string name = full_type_str(btf, t);
+    if (name.find("(anon)") != std::string::npos)
+      continue;
+
+    if (bt_verbose)
+      btf_dump__dump_type(dump, id);
+    else
+      struct_set.insert({ name, module });
+  }
+
+  if (id != (max + 1))
+    LOG(ERROR) << " BTF data inconsistency " << id << "," << max;
+
+  if (bt_verbose) {
+    // BTF dump contains definitions of all types in a single string, here we
+    // split it
+    std::istringstream type_stream(types.str());
+    std::string line, type;
+    bool in_def = false;
+    while (std::getline(type_stream, line)) {
+      if (in_def) {
+        type += line + "\n";
+        if (line == "};") {
+          // end of type definition
+          struct_set.insert({ type, module });
+          type.clear();
+          in_def = false;
+        }
+      } else if ((line.starts_with(STRUCT_PREFIX) ||
+                  line.starts_with(UNION_PREFIX) ||
+                  line.starts_with(ENUM_PREFIX)) &&
+                 line.back() == '{') {
+        // start of type definition
+        type += line + "\n";
+        in_def = true;
+      }
+    }
+  }
+
+  return struct_set;
+}
+
 std::set<std::string> BTF::get_all_structs() const
 {
   std::set<std::string> structs;
   for (const auto &btf_obj : btf_objects) {
     auto mod_structs = get_all_structs_from_btf(btf_obj.btf);
+    structs.insert(mod_structs.begin(), mod_structs.end());
+  }
+  return structs;
+}
+
+StructSet BTF::get_all_structs2() const
+{
+  StructSet structs;
+  for (const auto &btf_obj : btf_objects) {
+    auto mod_structs = get_all_structs_from_btf2(btf_obj.btf, btf_obj.name);
     structs.insert(mod_structs.begin(), mod_structs.end());
   }
   return structs;
