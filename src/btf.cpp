@@ -1047,9 +1047,10 @@ FuncParamLists BTF::get_rawtracepoint_params(
       });
 }
 
-std::set<std::string> BTF::get_all_structs_from_btf(const struct btf *btf) const
+StructSet BTF::get_all_structs_from_btf(const struct btf *btf,
+                                        const std::string module) const
 {
-  std::set<std::string> struct_set;
+  StructSet struct_set;
 
   std::stringstream types;
   auto *dump = dump_new(btf, dump_printf, &types);
@@ -1078,7 +1079,7 @@ std::set<std::string> BTF::get_all_structs_from_btf(const struct btf *btf) const
     if (bt_verbose)
       btf_dump__dump_type(dump, id);
     else
-      struct_set.insert(std::move(name));
+      struct_set.insert({ name, module });
   }
 
   if (id != (max + 1))
@@ -1095,7 +1096,7 @@ std::set<std::string> BTF::get_all_structs_from_btf(const struct btf *btf) const
         type += line + "\n";
         if (line == "};") {
           // end of type definition
-          struct_set.insert(type);
+          struct_set.insert({ type, module });
           type.clear();
           in_def = false;
         }
@@ -1113,11 +1114,11 @@ std::set<std::string> BTF::get_all_structs_from_btf(const struct btf *btf) const
   return struct_set;
 }
 
-std::set<std::string> BTF::get_all_structs() const
+StructSet BTF::get_all_structs() const
 {
-  std::set<std::string> structs;
+  StructSet structs;
   for (const auto &btf_obj : btf_objects) {
-    auto mod_structs = get_all_structs_from_btf(btf_obj.btf);
+    auto mod_structs = get_all_structs_from_btf(btf_obj.btf, btf_obj.name);
     structs.insert(mod_structs.begin(), mod_structs.end());
   }
   return structs;
