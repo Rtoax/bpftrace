@@ -55,6 +55,19 @@ constexpr std::string_view BTF_ANON_STRUCT_PREFIX = "__bpftrace_btf_anon_";
 
 using FuncParamLists = std::map<std::string, std::vector<std::string>>;
 
+// Save the structure definition and module name/BTF. Only the structure
+// definition needs to be compared; for example, `task_struct` will appear in
+// the BTF of all modules.
+struct StructSetCompare {
+  bool operator()(const std::pair<std::string, std::set<std::string>>& a,
+                  const std::pair<std::string, std::set<std::string>>& b) const
+  {
+    return a.first < b.first;
+  }
+};
+using StructSet =
+    std::set<std::pair<std::string, std::set<std::string>>, StructSetCompare>;
+
 class BTF {
   enum state {
     INIT,
@@ -101,7 +114,7 @@ public:
   // will be generated.
   std::string c_def(const std::unordered_set<std::string>& set = {});
 
-  std::set<std::string> get_all_structs() const;
+  StructSet get_all_structs() const;
   std::unique_ptr<std::istream> get_all_traceable_funcs(const symbols::KernelInfo &kernel_func_info) const;
   std::unordered_set<std::string> get_all_iters() const;
   std::unique_ptr<std::istream> get_all_raw_tracepoints();
@@ -154,6 +167,8 @@ private:
       const BTFObj& btf_obj,
       const std::set<std::string>& rawtracepoints) const;
   std::set<std::string> get_all_structs_from_btf(const struct btf* btf) const;
+  StructSet get_all_structs_from_btf(const struct btf* btf,
+                                     const std::string module) const;
   std::unordered_set<std::string> get_all_iters_from_btf(
       const struct btf* btf) const;
   // This returns the id of the first type that is not a BTF_KIND_TYPE_TAG
