@@ -1,0 +1,19 @@
+#!/bin/env bpftrace
+
+struct st {
+	int a;
+	int b;
+};
+
+macro offset_of(st, field)
+{
+	offsetof(st, field)
+}
+
+BEGIN
+{
+	// TODO: support pass struct param to macro arguments
+	// see https://github.com/Rtoax/bpftrace/tree/patch-131-macro-struct
+	printf("%d\n", offset_of(struct st, b));
+	exit();
+}

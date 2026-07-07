@@ -535,6 +535,33 @@ Expression Parser::parse_macro_arg()
     return { map };
   }
 
+#if 0 // Maybe just expand in src/ast/passes/macro_expansion.cpp
+  auto kw = peek_keyword();
+  if ((kw == "struct" || kw == "union" || kw == "enum")) {
+#if 0
+    auto record_name = consume_identifier("expect identifier for struct");
+    auto loc = make_loc(begin_line, begin_col, line_, col_);
+    // TODO:
+    auto *record = ctx_.make_node<Record>(loc, record_name);
+    consume_layout();
+    // TODO:
+    return { record };
+#elif 0
+    consume_layout();
+    auto record_name = consume_identifier("expect identifier for struct");
+    if (!record_name) {
+    }
+#else
+    if (auto record = try_parse_record(begin_line, begin_col)) {
+      consume_layout();
+      return std::move(*record);
+    } else {
+      // TODO:
+    }
+#endif
+  }
+#endif
+
   auto ident = consume_identifier(
       "expected macro argument ($var, @map, or identifier)");
   if (!ident) {

@@ -176,6 +176,7 @@ public:
   void visit(Offsetof &offsetof_node);
   void visit(Typeof &typeof_node);
   void visit(TypeArg &type_arg);
+  // void visit(Record &record_arg);
 
   void visit_expr_or_type(ExprOrType &record);
 
