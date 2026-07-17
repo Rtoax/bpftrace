@@ -4,6 +4,7 @@
 #include <clang/Frontend/FrontendActions.h>
 #include <clang/Frontend/TextDiagnosticPrinter.h>
 #include <fcntl.h>
+#include <filesystem>
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
 #include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/Support/MemoryBuffer.h>
@@ -106,6 +107,12 @@ static Result<BitcodeModules::Result> build(
   std::vector<const char *> args;
   args.push_back("-O2");
   args.push_back("-Iinclude");
+
+  std::string inccwd = std::string("-I") +
+                       std::filesystem::current_path().string();
+  //std::string inccwd = std::string("-I/home/rongtao/Git/tst-linux/bpf/bpftrace/samples/import");
+  //std::string inccwd("-I/home/rongtao/Git/tst-linux/bpf/bpftrace/samples/import");
+  args.push_back(inccwd.c_str());
   for (const auto &s : arch::Host::c_defs()) {
     args.push_back("-D");
     args.push_back(s.c_str());
@@ -113,6 +120,13 @@ static Result<BitcodeModules::Result> build(
   args.push_back("-o");
   args.push_back(memfd->path().c_str());
   args.push_back(name.c_str());
+
+  std::cout << "ARGS: ";
+  for (const char* arg : args) {
+    if (arg == nullptr) break;
+    std::cout << arg << ' ';
+  }
+  std::cout << '\n';
 
   // Configure the instance. We want to read the source file named
   // by `name` above, enable debug information and optimization.
