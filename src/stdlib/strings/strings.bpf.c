@@ -12,11 +12,49 @@
 
 extern int bpf_strnlen(const char *s__ign, size_t count) __ksym __weak;
 
+#ifdef has_bpf_loop
+struct strnlen_ctx {
+  const char *str;
+  __u32 sz;
+  __u32 len;
+};
+
+static int strnlen_cb(__u32 index, void *data)
+{
+  struct strnlen_ctx *ctx = data;
+  if (index > ctx->sz) {
+    return 1;
+  }
+  char ch;
+  // linux >= v5.5
+  bpf_probe_read_kernel(&ch, sizeof(char), (void *)(ctx->str + index));
+  if (ch == '\0') {
+    // terminate the bpf_loop()
+    return 1;
+  }
+  ctx->len++;
+  return 0;
+}
+#endif
+
 long __bpf_strnlen(const char *ptr, size_t max_size)
 {
   if (bpf_strnlen) {
     return bpf_strnlen(ptr, max_size);
   }
+#ifdef has_bpf_loop
+  // To allow the external interface function __bpf_strnlen to be called by
+  // other functions in strings.bpf.c and to solve the problem of
+  // `The sequence of xxxx jumps is too complex`, bpf_loop() first is used
+  // instead of a for loop.
+  struct strnlen_ctx ctx = {
+    .str = ptr,
+    .sz = max_size,
+    .len = 0,
+  };
+  bpf_loop(max_size, strnlen_cb, &ctx, 0);
+  return ctx.len;
+#else
   long sz = 0;
   for (size_t i = 0; i < max_size; ++i) {
     if (ptr[i] == 0) {
@@ -25,6 +63,7 @@ long __bpf_strnlen(const char *ptr, size_t max_size)
     ++sz;
   }
   return sz;
+#endif
 }
 
 extern int bpf_strnstr(const char *s1__ign,
@@ -65,6 +104,15 @@ int __bpf_strnstr(const char *haystack,
     }
   }
   return -1;
+}
+
+long __bpf_str_concat(char *dst, size_t dst_sz, const char *src)
+{
+  long dst_len = __bpf_strnlen(dst, dst_sz);
+  if (dst_len < 0 || dst_len >= dst_sz)
+    return 0;
+  // linux >= v5.5
+  return bpf_probe_read_kernel_str(dst + dst_len, dst_sz - dst_len, src);
 }
 
 int __strerror(int errno, err_str *out) {
