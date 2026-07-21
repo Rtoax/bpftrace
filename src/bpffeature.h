@@ -63,6 +63,7 @@ public:
   virtual bool has_iter(std::string name);
 
   std::string report();
+  std::vector<std::string> cflags();
 
   DEFINE_HELPER_TEST(ktime_get_tai_ns, BPF_PROG_TYPE_KPROBE);
   DEFINE_HELPER_TEST(get_func_ip, BPF_PROG_TYPE_KPROBE);

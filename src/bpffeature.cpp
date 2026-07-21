@@ -497,6 +497,25 @@ std::string BPFfeature::report()
   return buf.str();
 }
 
+std::vector<std::string> BPFfeature::cflags()
+{
+  std::vector<std::string> flags;
+  auto def = [&flags](std::string name, bool f) -> void {
+    if (f) {
+      flags.emplace_back("-D");
+      flags.emplace_back(std::string("has_bpf_") + name);
+    }
+  };
+
+  def("d_path", has_d_path());
+  def("get_func_ip", has_helper_get_func_ip());
+  def("ktime_get_tai_ns", has_helper_ktime_get_tai_ns());
+  def("loop", has_helper_loop());
+  def("map_lookup_percpu_elem", has_helper_map_lookup_percpu_elem());
+
+  return flags;
+}
+
 bool BPFfeature::has_iter(std::string name)
 {
   auto tracing_name = "bpf_iter_" + name;

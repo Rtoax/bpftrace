@@ -32,6 +32,7 @@ void ClangBuildError::log(llvm::raw_ostream &OS) const
 }
 
 static Result<BitcodeModules::Result> build(
+    BPFtrace &bpftrace,
     CompileContext &ctx,
     const std::string &name,
     LoadedObject &obj,
@@ -104,8 +105,13 @@ static Result<BitcodeModules::Result> build(
   // information, for some reason. The generated module will be linked and
   // optimized again regardless, but it is better safe than sorry.
   std::vector<const char *> args;
+  auto cflags_feature = bpftrace.feature_->cflags();
+
   args.push_back("-O2");
   args.push_back("-Iinclude");
+  for (const auto &f : cflags_feature) {
+    args.push_back(f.c_str());
+  }
   for (const auto &s : arch::Host::c_defs()) {
     args.push_back("-D");
     args.push_back(s.c_str());
@@ -195,7 +201,8 @@ ast::Pass CreateClangBuildPass()
         // For each of the source files in the imports, we
         // build it and turn it into a bitcode file.
         for (auto &[name, obj] : imports.c_sources) {
-          auto result = build(ctx,
+          auto result = build(bpftrace,
+                              ctx,
                               name,
                               obj,
                               llvm::MemoryBufferRef(llvm::StringRef(vmlinux_h),
