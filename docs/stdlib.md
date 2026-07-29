@@ -13,6 +13,21 @@ Basically all functions or macros that don't have arguments or have default argu
 
 ## Helpers
 
+### abs_path
+- `string abs_path(string path, uint64 max_path_depth);`
+
+Returns the absolute path for the passed relative path or filename. If the `path` param is an empty string then the current working directory is returned.
+
+Example:
+```
+tracepoint:syscalls:sys_enter_openat {
+  print(abs_path(str(args.filename), 32));
+}
+```
+
+see also `cwd`.
+
+
 ### assert
 - `void assert(bool condition, string message)`
 
@@ -211,6 +226,13 @@ This utilizes the BPF helper `raw_smp_processor_id`
 Pointer to `struct task_struct` of the current task
 
 This utilizes the BPF helper `get_current_task`
+
+
+### cwd
+- `string cwd();`
+- `string cwd;`
+
+Get the current working directory. This is equivalent to calling `abs_path()` with an empty string.
 
 
 ### default_str_length
