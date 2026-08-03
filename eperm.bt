@@ -1,0 +1,11 @@
+#!/bin/env bpftrace
+config = {
+  max_strlen = 256;
+}
+
+tracepoint:syscalls:sys_enter_openat
+{
+  str(args.filename);
+  //print(str(args.filename));
+  //print(buf(args.filename, 127));
+}

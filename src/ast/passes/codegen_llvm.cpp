@@ -1438,6 +1438,7 @@ ScopedExpr CodegenLLVM::visit(Call &call)
       padding = 1;
       readlen = b_.CreateAdd(readlen, b_.getInt64(padding));
     }
+    std::cout << __func__ << " max_strlen " << max_strlen << std::endl;
     Value *buf = b_.CreateGetStrAllocation("str", call.loc, padding);
     b_.CreateMemsetBPF(buf, b_.getInt8(0xff), max_strlen + padding);
     auto &arg0 = call.vargs.front();

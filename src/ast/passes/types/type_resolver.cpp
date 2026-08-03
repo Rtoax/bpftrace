@@ -1057,6 +1057,10 @@ void TypeRuleCollector::visit(Call &call)
                           << integer->value << ")";
         }
       }
+      if (strlen < 1024) {
+        strlen++;
+      }
+      std::cout << __func__ << " strlen " << strlen << std::endl;
       return_type = CreateString(strlen);
       return_type.SetAS(AddrSpace::kernel);
     } else if (call.func == "buf") {

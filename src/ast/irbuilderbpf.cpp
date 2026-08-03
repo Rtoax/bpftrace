@@ -323,6 +323,7 @@ AllocaInst *IRBuilderBPF::CreateAllocaBPF(int bytes, const std::string &name)
 
 void IRBuilderBPF::CreateMemsetBPF(Value *ptr, Value *val, uint32_t size)
 {
+  std::cout << __func__ << " size " << size << std::endl;
   if (size > 512) {
     // Note we are "abusing" bpf_probe_read_kernel() by reading from NULL
     // which triggers a call into the kernel-optimized memset().
@@ -592,6 +593,7 @@ Value *IRBuilderBPF::CreateGetStrAllocation(const std::string &name,
 {
   const auto max_strlen = bpftrace_.config_->max_strlen + pad;
   const auto str_type = CreateArray(max_strlen, CreateInt8());
+  std::cout << __func__ << " max_strlen " << max_strlen << std::endl;
   return createAllocation(bpftrace::globalvars::GET_STR_BUFFER,
                           GetType(str_type),
                           name,

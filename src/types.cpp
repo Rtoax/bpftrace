@@ -409,6 +409,7 @@ SizedType CreateEnum(size_t bits, const std::string &name)
 
 SizedType CreateString(size_t size)
 {
+  std::cout << __func__ << " size " << size << std::endl;
   return { Type::string, size };
 }
 
