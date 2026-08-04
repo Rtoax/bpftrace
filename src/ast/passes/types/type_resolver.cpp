@@ -1039,7 +1039,7 @@ void TypeRuleCollector::visit(Call &call)
                it != SIMPLE_CALL_TYPES.end()) {
       return_type = it->second();
     } else if (call.func == "str") {
-      auto strlen = bpftrace_.config_->max_strlen;
+      auto strlen = bpftrace_.config_->pad_max_strlen();
       if (call.vargs.size() == 2) {
         if (auto *integer = call.vargs.at(1).as<Integer>()) {
           if (integer->value + 1 > strlen) {
@@ -1060,7 +1060,7 @@ void TypeRuleCollector::visit(Call &call)
       return_type = CreateString(strlen);
       return_type.SetAS(AddrSpace::kernel);
     } else if (call.func == "buf") {
-      const uint64_t max_strlen = bpftrace_.config_->max_strlen;
+      const uint64_t max_strlen = bpftrace_.config_->pad_max_strlen();
       uint32_t max_buffer_size = max_strlen - sizeof(AsyncEvent::Buf);
       uint32_t buffer_size = max_buffer_size;
 
@@ -1177,7 +1177,7 @@ void TypeRuleCollector::visit(Call &call)
     } else if (call.func == "ustack" || call.func == "__builtin_dw_ustack") {
       return_type = get_stack_type(call, false);
     } else if (call.func == "path") {
-      auto call_type_size = bpftrace_.config_->max_strlen;
+      auto call_type_size = bpftrace_.config_->pad_max_strlen();
       if (call.vargs.size() == 2) {
         if (auto *size = call.vargs.at(1).as<Integer>()) {
           call_type_size = size->value;

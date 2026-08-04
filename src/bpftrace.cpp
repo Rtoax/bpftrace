@@ -1228,7 +1228,7 @@ std::string BPFtrace::format_timestamp(
   fmt = std::regex_replace(fmt, nsec_regex, nsecs_buf);
   fmt = std::regex_replace(fmt, msec_regex, msecs_buf);
 
-  const auto timestr_size = config_->max_strlen;
+  const auto timestr_size = config_->pad_max_strlen();
   std::string timestr(timestr_size, '\0');
   size_t timestr_len = strftime(
       timestr.data(), timestr_size, fmt.c_str(), &tmp);

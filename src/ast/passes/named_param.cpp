@@ -83,7 +83,7 @@ void NamedParamPass::visit(Expression &expr)
     np_default = default_value->value;
   } else if (auto *default_value = call->vargs.at(1).as<String>()) {
     // string
-    val_type = CreateString(bpftrace_.config_->max_strlen);
+    val_type = CreateString(bpftrace_.config_->pad_max_strlen());
     np_default = default_value->value;
   } else if (auto *default_value = call->vargs.at(1).as<Integer>()) {
     // unsigned integer

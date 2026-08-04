@@ -300,5 +300,5 @@ WILL_FAIL
 
 NAME config builtin reads integer, string, and boolean
 RUN {{BPFTRACE}} -e 'BEGIN { printf("%d %s %d\n", config().max_strlen, config().stack_mode, config().cpp_demangle); exit(); }'
-EXPECT 1024 bpftrace 1
+EXPECT 1032 bpftrace 1
 TIMEOUT 5
