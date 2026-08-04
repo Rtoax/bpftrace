@@ -1406,7 +1406,7 @@ ScopedExpr CodegenLLVM::visit(Call &call)
 
     return ScopedExpr();
   } else if (call.func == "str") {
-    const auto max_strlen = bpftrace_.config_->max_strlen;
+    const auto max_strlen = bpftrace_.config_->pad_max_strlen();
     // Largest read we'll allow = our global string buffer size
     Value *strlen = b_.getInt64(max_strlen);
     if (call.vargs.size() > 1) {
@@ -1426,20 +1426,9 @@ ScopedExpr CodegenLLVM::visit(Call &call)
       strlen = b_.CreateSelect(Cmp, proposed_strlen, strlen, "str.min.select");
     }
 
-    // Note that the successful copying of the string will always include the
-    // NULL byte, so we explicitly poison the string value up front. This
-    // allows the conversion to know when the string has been truncated. We
-    // have added an extra byte to the kernel copy to account for this.
-    // Anything copied out of this will be copied as a str[N] type that may
-    // omit the NUL byte (which indicates that it has been truncated).
-    uint64_t padding = 0;
     Value *readlen = strlen;
-    if (max_strlen < 1024) {
-      padding = 1;
-      readlen = b_.CreateAdd(readlen, b_.getInt64(padding));
-    }
-    Value *buf = b_.CreateGetStrAllocation("str", call.loc, padding);
-    b_.CreateMemsetBPF(buf, b_.getInt8(0xff), max_strlen + padding);
+    Value *buf = b_.CreateGetStrAllocation("str", call.loc);
+    b_.CreateMemsetBPF(buf, b_.getInt8(0xff), max_strlen);
     auto &arg0 = call.vargs.front();
     auto scoped_expr = visit(call.vargs.front());
     b_.CreateProbeReadStr(buf,
@@ -1452,7 +1441,7 @@ ScopedExpr CodegenLLVM::visit(Call &call)
       return ScopedExpr(buf, [this, buf]() { b_.CreateLifetimeEnd(buf); });
     return ScopedExpr(buf);
   } else if (call.func == "buf") {
-    const auto max_strlen = bpftrace_.config_->max_strlen;
+    const auto max_strlen = bpftrace_.config_->pad_max_strlen();
     // Subtract out metadata headroom
     uint64_t fixed_buffer_length = max_strlen - sizeof(AsyncEvent::Buf);
     Value *max_length = b_.getInt64(fixed_buffer_length);
@@ -1512,7 +1501,7 @@ ScopedExpr CodegenLLVM::visit(Call &call)
     return ScopedExpr(buf);
   } else if (call.func == "path") {
     Value *buf = b_.CreateGetStrAllocation("path", call.loc);
-    const auto max_size = bpftrace_.config_->max_strlen;
+    const auto max_size = bpftrace_.config_->pad_max_strlen();
     b_.CreateMemsetBPF(buf, b_.getInt8(0), max_size);
     Value *sz;
     if (call.vargs.size() > 1) {
@@ -2546,7 +2535,7 @@ ScopedExpr CodegenLLVM::visit(IfExpr &if_expr)
   Value *buf = nullptr;
   if (type_map_.type(&if_expr).IsStringTy()) {
     buf = b_.CreateGetStrAllocation("buf", if_expr.loc);
-    const auto max_strlen = bpftrace_.config_->max_strlen;
+    const auto max_strlen = bpftrace_.config_->pad_max_strlen();
     b_.CreateMemsetBPF(buf, b_.getInt8(0), max_strlen);
   } else if (!type_map_.type(&if_expr).IsIntTy() &&
              !type_map_.type(&if_expr).IsBoolTy() &&
@@ -2845,7 +2834,7 @@ ScopedExpr CodegenLLVM::visit(MapAccess &acc)
   if (named_param_info_.defaults.contains(acc.map->ident)) {
     const auto &val_type = type_map_.map_value_type(acc.map->ident);
     if (val_type.IsStringTy()) {
-      const auto max_strlen = bpftrace_.config_->max_strlen;
+      const auto max_strlen = bpftrace_.config_->pad_max_strlen();
       Value *np_alloc = b_.CreateGetStrAllocation(acc.map->ident, acc.loc);
       b_.CreateMemsetBPF(np_alloc, b_.getInt8(0), max_strlen);
       auto sized_type = bpftrace_.resources.global_vars.get_sized_type(

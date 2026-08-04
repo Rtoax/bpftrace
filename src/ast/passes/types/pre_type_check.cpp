@@ -730,7 +730,7 @@ void CallPreCheck::visit(String &string)
       func_arg_idx_ == 0)
     return;
 
-  const auto str_len = bpftrace_.config_->max_strlen;
+  const auto str_len = bpftrace_.config_->pad_max_strlen();
   if (!is_compile_time_func(func_) && string.value.size() > str_len - 1) {
     string.addError() << "String is too long (over " << str_len
                       << " bytes): " << string.value;
