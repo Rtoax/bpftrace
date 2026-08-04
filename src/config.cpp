@@ -439,4 +439,15 @@ std::string Config::get_license_str(CompatibleBPFLicense license)
   return "";
 }
 
+uint64_t Config::pad_max_strlen() const
+{
+  // Note that the successful copying of the string will always include the
+  // NULL byte, so we explicitly poison the string value up front. This
+  // allows the conversion to know when the string has been truncated. We
+  // have added an extra byte to the kernel copy to account for this.
+  // Anything copied out of this will be copied as a str[N] type that may
+  // omit the NUL byte (which indicates that it has been truncated).
+  return max_strlen < 1024 ? max_strlen + 1 : max_strlen;
+}
+
 } // namespace bpftrace
