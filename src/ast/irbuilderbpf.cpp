@@ -590,7 +590,7 @@ Value *IRBuilderBPF::CreateGetStrAllocation(const std::string &name,
                                             const Location &loc,
                                             uint64_t pad)
 {
-  const auto max_strlen = bpftrace_.config_->max_strlen + pad;
+  const auto max_strlen = bpftrace_.config_->pad_max_strlen() + pad;
   const auto str_type = CreateArray(max_strlen, CreateInt8());
   return createAllocation(bpftrace::globalvars::GET_STR_BUFFER,
                           GetType(str_type),

@@ -265,7 +265,7 @@ void TypeChecker::visit(Call &call)
           << "argument (" << t << " provided)";
     }
   } else if (call.func == "buf") {
-    const uint64_t max_strlen = bpftrace_.config_->max_strlen;
+    const uint64_t max_strlen = bpftrace_.config_->pad_max_strlen();
     if (max_strlen >
         std::numeric_limits<decltype(AsyncEvent::Buf::length)>::max()) {
       call.addError() << "BPFTRACE_MAX_STRLEN too large to use on buffer ("

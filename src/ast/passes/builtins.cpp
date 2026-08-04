@@ -131,7 +131,7 @@ std::optional<Expression> Builtins::check(const std::string &ident, Node &node)
     add_int("max_cat_bytes", cfg->max_cat_bytes);
     add_int("max_map_keys", cfg->max_map_keys);
     add_int("max_probes", cfg->max_probes);
-    add_int("max_strlen", cfg->max_strlen);
+    add_int("max_strlen", cfg->pad_max_strlen());
     add_int("on_stack_limit", cfg->on_stack_limit);
     add_int("perf_rb_pages", cfg->perf_rb_pages);
 
