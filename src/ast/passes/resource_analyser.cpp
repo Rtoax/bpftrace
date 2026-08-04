@@ -391,7 +391,7 @@ void ResourceAnalyser::visit(Call &call)
   }
 
   if (call.func == "str" || call.func == "buf" || call.func == "path") {
-    const auto max_strlen = bpftrace_.config_->max_strlen;
+    const auto max_strlen = bpftrace_.config_->pad_max_strlen();
     if (exceeds_stack_limit(max_strlen))
       resources_.str_buffers++;
   }
