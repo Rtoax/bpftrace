@@ -247,7 +247,7 @@ SizedType GlobalVars::get_sized_type(const std::string &global_var_name,
     assert(resources.str_buffers > 0);
     const auto max_strlen = bpftrace_config.max_strlen;
     return make_rw_type(resources.str_buffers,
-                        CreateArray(max_strlen, CreateInt8()));
+                        CreateArray(max_strlen + 1, CreateInt8()));
   }
 
   if (global_var_name == READ_MAP_VALUE_BUFFER) {
