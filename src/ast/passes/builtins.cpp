@@ -190,12 +190,14 @@ std::optional<Expression> Builtins::check(const std::string &ident, Node &node)
     return ast_.make_node<String>(node.loc, ss.str());
   } else if (ident == "__builtin_safe_mode") {
     return ast_.make_node<Boolean>(node.loc, bpftrace_.safe_mode_);
-  } else if (ident == "__builtin_probe") {
+  } else if (ident == "__builtin_probe" || ident == "__builtin_func") {
     if (check_probe()) {
+      auto name = ident == "__builtin_probe"
+                      ? probe->attach_points.front()->name()
+                      : probe->attach_points.front()->target;
       return ast_.make_node<String>(node.loc,
-                                    probe->attach_points.empty()
-                                        ? "none"
-                                        : probe->attach_points.front()->name());
+                                    probe->attach_points.empty() ? "none"
+                                                                 : name);
     }
   } else if (ident == "__builtin_probetype") {
     if (check_probe()) {
