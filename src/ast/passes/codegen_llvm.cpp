@@ -864,9 +864,20 @@ ScopedExpr CodegenLLVM::visit(Builtin &builtin)
     Value *value = nullptr;
     auto probe_type = probetype(current_attach_point_->provider);
     if (probe_type == ProbeType::fentry || probe_type == ProbeType::fexit ||
-        probe_type == ProbeType::kretprobe ||
-        probe_type == ProbeType::uretprobe) {
+        probe_type == ProbeType::kprobe || probe_type == ProbeType::kretprobe ||
+        probe_type == ProbeType::uprobe || probe_type == ProbeType::uretprobe) {
+      auto *ap = current_attach_point_;
+      std::cout << ">> " << ap->func_offset << std::endl;
+#if 0
       value = b_.CreateGetFuncIp(ctx_, builtin.loc);
+      value = b_.CreateSub(value, b_.getInt64(ap->func_offset));
+#else
+      Value *funcPtr = b_.CreateGetFuncIp(ctx_, builtin.loc);
+      Value *funcAddr = b_.CreatePtrToInt(funcPtr, b_.getInt64Ty(), "func_addr");
+      Value *adjustedAddr = b_.CreateSub(funcAddr, b_.getInt64(ap->func_offset));
+      Value *adjustedPtr = b_.CreateIntToPtr(adjustedAddr, funcPtr->getType(), "adjusted_ptr");
+      value = adjustedPtr;
+#endif
     } else {
       value = b_.CreateRegisterRead(ctx_, builtin.ident);
     }
